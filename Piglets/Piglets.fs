@@ -50,13 +50,6 @@ type Stream<'a> [<JavaScript>] (init: Result<'a>) =
         [<JavaScript>] member this.Latest = this.Latest
         [<JavaScript>] member this.Subscribe f = this.Subscribe f
 
-[<Sealed>]
-type Submitter<'a> [<JavaScript>] (toSubmit: Reader<'a>, submit: unit -> unit) =
-    [<JavaScript>]
-    member this.ToSubmit = toSubmit
-    [<JavaScript>]
-    member this.Submit() = submit()
-
 module private Stream =
 
     [<JavaScript>]
@@ -138,7 +131,7 @@ module Piglet =
                 fin.stream.Subscribe)
         {
             stream = fout
-            view = fin.view <<^ Submitter(canSubmit, submit)
+            view = fin.view <<^ (submit, canSubmit :> Reader<_>)
         }
 
     [<JavaScript>]
@@ -273,12 +266,12 @@ module Piglet =
             c
 
         [<JavaScript>]
-        let Submit (s: Submitter<'a>) =
+        let Submit (submit, toSubmit: Reader<_>) =
             Default.Input [Attr.Type "submit"]
-            |>! OnClick (fun _ _ -> s.Submit())
+            |>! OnClick (fun _ _ -> submit())
             |>! OnAfterRender (fun el ->
-                el.Body?disabled <- not s.ToSubmit.Latest.isSuccess
-                s.ToSubmit.Subscribe(fun x -> el.Body?disabled <- not x.isSuccess))
+                el.Body?disabled <- not toSubmit.Latest.isSuccess
+                toSubmit.Subscribe(fun x -> el.Body?disabled <- not x.isSuccess))
 
         [<JavaScript>]
         let Button (submit: Writer<unit>) =

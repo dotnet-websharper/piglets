@@ -20,15 +20,6 @@ type Stream<'a> =
     interface Writer<'a>
     interface Reader<'a>
 
-/// Object used by a submit button.
-[<Sealed>]
-type Submitter<'a> =
-    /// The value to be submitted.
-    /// Use this to de/activate the submit button.
-    member ToSubmit : Reader<'a>
-    /// Signal that the value can be submitted.
-    member Submit : unit -> unit
-
 type Piglet<'a, 'v>
 
 [<AutoOpen>]
@@ -47,7 +38,7 @@ module Piglet =
 
     /// Create a Piglet value that streams the value every time it receives a signal.
     /// The signaling function is passed to the view.
-    val WithSubmit : Piglet<'a, 'b -> Submitter<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
+    val WithSubmit : Piglet<'a, 'b -> (unit -> unit) * Reader<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
 
     /// Pass this Piglet's stream to the view.
     val TransmitStream : Piglet<'a, 'b -> Stream<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
@@ -101,7 +92,7 @@ module Piglet =
             Element
 
         /// Displays a submit button driven by the given submitter.
-        val Submit : Submitter<'a> -> Element
+        val Submit : (unit -> unit) * Reader<'a> -> Element
 
         /// A button that triggers the given callback.
         val Button : Writer<unit> -> Element
