@@ -17,7 +17,7 @@ module Model =
             + if u.isMale then ", male" else ", female"
             + if u.comments = "" then ", no comment" else ("; " + u.comments)
 
-module Controller =
+module ViewModel =
 
     open Model
 
@@ -45,6 +45,7 @@ module Controller =
 
 module View =
 
+    open Model
     open IntelliFactory.WebSharper.Html
 
     [<JavaScript>]
@@ -75,7 +76,7 @@ module View =
                     [
                         Attr.Style "border:solid 1px #bbb;margin:10px;padding:5px"
                         B [Text "Summary: "] :> IPagelet
-                        Text (Model.User.Pretty u)
+                        Text (User.Pretty u)
                     ]
                 | Failure msgs ->
                     [
@@ -102,5 +103,5 @@ let UI() =
             isMale = true
             comments = "Badass"
         }
-    Controller.User initUser
+    ViewModel.User initUser
     |> Piglet.Render View.User 
