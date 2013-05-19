@@ -56,28 +56,12 @@ module View =
     [<JavaScript>]
     let User (firstName, lastName) age gender comments participates liveUser submit =
         Div [
-            Div [
-                Label [Text "First name:"]
-                C.Input firstName
-            ]
-            Div [
-                Label [Text "Last name:"]
-                C.Input lastName
-            ]
-            Div [
-                C.Radio gender [Male, "Male"; Female, "Female"]
-            ]
-            Div [
-                Label [Text "Age:"]
-                C.IntInput age
-            ]
-            Div [
-                C.CheckBox participates "Participate in the survey"
-            ]
-            Div [
-                Label [Text "Comments:"]
-                C.TextArea comments
-            ]
+            Div [C.Input firstName "First name:"]
+            Div [C.Input lastName "Last name:"]
+            Div [C.Radio gender [Male, "Male"; Female, "Female"]]
+            Div [C.IntInput age "Age:"]
+            Div [C.CheckBox participates "Participate in the survey"]
+            Div [C.TextArea comments "Comments:"]
             Table [
                 TBody [
                     TR [
@@ -116,13 +100,10 @@ module View =
                             yield (Br [] :> _)
                     ]
                 ])
-            Div [
-                C.Submit submit
-            ]
+            Div [C.Submit submit]
             Div [
                 Br []; Br []
-                Label [Text "Age again:"]
-                C.IntInput age
+                C.IntInput age "Age again:"
                 Span [Text "(just to test several inputs connected to the same stream)"]
             ]
         ]

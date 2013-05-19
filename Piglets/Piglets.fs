@@ -202,8 +202,9 @@ module Piglet =
         open IntelliFactory.WebSharper.Html
 
         [<JavaScript>]
-        let Input (stream: Stream<string>) =
-            let i = Default.Input [Attr.Type "text"]
+        let Input (stream: Stream<string>) (label: string) =
+            let id = nextId()
+            let i = Default.Input [Attr.Type "text"; Attr.Id id]
             match stream.Latest with
             | Failure _ -> ()
             | Success x -> i.Value <- x
@@ -214,10 +215,11 @@ module Piglet =
             let ev (_: Dom.Event) = stream.Trigger(Success i.Value)
             i.Body.AddEventListener("keyup", ev, true)
             i.Body.AddEventListener("change", ev, true)
-            i
+            Span [Label [Attr.For id; Text label]; i]
         
         [<JavaScript>]
-        let TextArea (stream: Stream<string>) =
+        let TextArea (stream: Stream<string>) (label: string) =
+            let id = nextId()
             let i = Default.TextArea []
             match stream.Latest with
             | Failure _ -> ()
@@ -229,10 +231,11 @@ module Piglet =
             let ev (_: Dom.Event) = stream.Trigger(Success i.Value)
             i.Body.AddEventListener("keyup", ev, true)
             i.Body.AddEventListener("change", ev, true)
-            i
+            Span [Label [Attr.For id; Text label]; i]
 
         [<JavaScript>]
-        let IntInput (stream: Stream<int>) =
+        let IntInput (stream: Stream<int>) (label: string) =
+            let id = nextId()
             let i = Default.Input [Attr.Type "number"]
             match stream.Latest with
             | Failure _ -> ()
@@ -244,7 +247,7 @@ module Piglet =
             let ev (_: Dom.Event) = stream.Trigger(Success(int i.Value))
             i.Body.AddEventListener("keyup", ev, true)
             i.Body.AddEventListener("change", ev, true)
-            i
+            Span [Label [Attr.For id; Text label]; i]
 
         [<JavaScript>]
         let CheckBox (stream: Stream<bool>) (label: string) =
@@ -259,10 +262,7 @@ module Piglet =
                 | Failure _ -> ())
             let ev (_: Dom.Event) = stream.Trigger(Success i.Body?``checked``)
             i.Body.AddEventListener("change", ev, true)
-            Span [
-                i
-                Label [Attr.For id; Text label]
-            ]
+            Span [i; Label [Attr.For id; Text label]]
 
         [<JavaScript>]
         let Radio (stream: Stream<'a>) (values: seq<'a * string>) =

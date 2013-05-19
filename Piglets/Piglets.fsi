@@ -73,16 +73,16 @@ module Piglet =
         open IntelliFactory.WebSharper.Html
 
         /// A Piglet text input.
-        val Input : Stream<string> -> Element
+        val Input : Stream<string> -> label: string -> Element
 
         /// A Piglet text area.
-        val TextArea : Stream<string> -> Element
+        val TextArea : Stream<string> -> label: string -> Element
 
         /// A Piglet text input that accepts integers.
-        val IntInput : Stream<int> -> Element
+        val IntInput : Stream<int> -> label: string -> Element
 
         /// A Piglet checkbox.
-        val CheckBox : Stream<bool> -> string -> Element
+        val CheckBox : Stream<bool> -> label: string -> Element
 
         /// A Piglet radio button set.
         val Radio<'a when 'a : equality> : Stream<'a> -> seq<'a * string> -> Element
