@@ -82,7 +82,10 @@ module Piglet =
         val IntInput : Stream<int> -> Element
 
         /// A Piglet checkbox.
-        val CheckBox : Stream<bool> -> Element
+        val CheckBox : Stream<bool> -> string -> Element
+
+        /// A Piglet radio button set.
+        val Radio<'a when 'a : equality> : Stream<'a> -> seq<'a * string> -> Element
 
         /// Display a reactive value.
         val ShowResult :

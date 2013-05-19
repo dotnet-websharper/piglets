@@ -85,6 +85,13 @@ module Pervasives =
             view = f.view >> x.view
         }
 
+    [<JavaScript>]
+    let nextId =
+        let current = ref 0
+        fun () ->
+            incr current
+            "pl__" + string !current
+
 module Piglet =
 
     /// I'd rather use an object expression,
@@ -240,8 +247,9 @@ module Piglet =
             i
 
         [<JavaScript>]
-        let CheckBox (stream: Stream<bool>) =
-            let i = Default.Input [Attr.Type "checkbox"]
+        let CheckBox (stream: Stream<bool>) (label: string) =
+            let id = nextId()
+            let i = Default.Input [Attr.Type "checkbox"; Attr.Id id]
             match stream.Latest with
             | Failure _ -> ()
             | Success x -> i.Body?``checked`` <- x
@@ -251,7 +259,35 @@ module Piglet =
                 | Failure _ -> ())
             let ev (_: Dom.Event) = stream.Trigger(Success i.Body?``checked``)
             i.Body.AddEventListener("change", ev, true)
-            i
+            Span [
+                i
+                Label [Attr.For id; Text label]
+            ]
+
+        [<JavaScript>]
+        let Radio (stream: Stream<'a>) (values: seq<'a * string>) =
+            let name = nextId()
+            let values = List.ofSeq values
+            let elts = values |> List.map (fun (x, label) ->
+                let id = nextId()
+                let input =
+                    Html.Default.Input [Attr.Type "radio"; Attr.Name name; Attr.Id id]
+                    |>! OnChange (fun div ->
+                        if div.Body?``checked`` then
+                            stream.Trigger(Success x))
+                input, Span [
+                    input
+                    Label [Attr.For id; Text label]
+                ])
+            Div (Seq.map snd elts)
+            |>! OnAfterRender (fun div ->
+                let set = function
+                    | Success v ->
+                        (values, elts) ||> List.iter2 (fun (x, _) (input, _) ->
+                            input.Body?``checked`` <- x = v)
+                    | Failure _ -> ()
+                set stream.Latest
+                stream.Subscribe set)
 
         [<JavaScript>]
         let ShowResult
