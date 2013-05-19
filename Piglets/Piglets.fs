@@ -293,7 +293,7 @@ module Piglet =
         let ShowResult
                 (reader: Reader<'a>)
                 (render: Result<'a> -> #seq<#IPagelet>)
-                (container: seq<IPagelet> -> Element) =
+                (container: seq<#IPagelet> -> Element) =
             let c = container (Seq.cast (render reader.Latest))
             reader.Subscribe(fun x ->
                 c.Clear()
@@ -305,7 +305,7 @@ module Piglet =
         let Show
                 (reader: Reader<'a>)
                 (render: 'a -> #seq<#IPagelet>)
-                (container: seq<IPagelet> -> Element) =
+                (container: seq<#IPagelet> -> Element) =
             let render = function
                 | Success x -> render x :> seq<_>
                 | Failure _ -> Seq.empty
@@ -319,7 +319,7 @@ module Piglet =
         let ShowErrors
                 (reader: Reader<'a>)
                 (render: string list -> #seq<#IPagelet>)
-                (container: seq<IPagelet> -> Element) =
+                (container: seq<#IPagelet> -> Element) =
             let render = function
                 | Success (x: 'a) -> Seq.empty
                 | Failure m -> render m :> seq<_>
