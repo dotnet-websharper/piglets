@@ -254,16 +254,40 @@ module Piglet =
             i
 
         [<JavaScript>]
-        let Show
+        let ShowResult
                 (reader: Reader<'a>)
-                (container: seq<IPagelet> -> Element)
-                (render: Result<'a> -> #seq<IPagelet>) =
-            let c = container (render reader.Latest)
+                (render: Result<'a> -> #seq<#IPagelet>)
+                (container: seq<IPagelet> -> Element) =
+            let c = container (Seq.cast (render reader.Latest))
             reader.Subscribe(fun x ->
                 c.Clear()
                 for e in render x do
-                    c.Append e)
+                    c.Append(e :> IPagelet))
             c
+
+        [<JavaScript>]
+        let Show
+                (reader: Reader<'a>)
+                (render: 'a -> #seq<#IPagelet>)
+                (container: seq<IPagelet> -> Element) =
+            let render = function
+                | Success x -> render x :> seq<_>
+                | Failure _ -> Seq.empty
+            ShowResult reader render container
+
+        [<JavaScript>]
+        let ShowString reader render container =
+            Show reader (fun x -> [Text (render x)]) container
+
+        [<JavaScript>]
+        let ShowErrors
+                (reader: Reader<'a>)
+                (render: string list -> #seq<#IPagelet>)
+                (container: seq<IPagelet> -> Element) =
+            let render = function
+                | Success (x: 'a) -> Seq.empty
+                | Failure m -> render m :> seq<_>
+            ShowResult reader render container
 
         [<JavaScript>]
         let Submit (submit, toSubmit: Reader<_>) =

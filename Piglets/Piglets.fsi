@@ -85,10 +85,31 @@ module Piglet =
         val CheckBox : Stream<bool> -> Element
 
         /// Display a reactive value.
+        val ShowResult :
+            Reader: Reader<'a> ->
+            render: (Result<'a> -> #seq<#IPagelet>) ->
+            container: (seq<IPagelet> -> Element) ->
+            Element
+
+        /// Display a reactive value, or nothing if it is invalid.
         val Show :
             Reader: Reader<'a> ->
+            render: ('a -> #seq<#IPagelet>) ->
             container: (seq<IPagelet> -> Element) ->
-            render: (Result<'a> -> #seq<IPagelet>) ->
+            Element
+
+        /// Display a reactive value, or nothing if it is invalid.
+        val ShowString :
+            Reader: Reader<'a> ->
+            render: ('a -> string) ->
+            container: (seq<IPagelet> -> Element) ->
+            Element
+
+        /// Display errors, if any.
+        val ShowErrors :
+            Reader: Reader<'a> ->
+            render: (string list -> #seq<#IPagelet>) ->
+            container: (seq<IPagelet> -> Element) ->
             Element
 
         /// Displays a submit button driven by the given submitter.

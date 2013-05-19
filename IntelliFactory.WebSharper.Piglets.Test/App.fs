@@ -47,49 +47,72 @@ module View =
 
     open Model
     open IntelliFactory.WebSharper.Html
+    module C = Piglet.Controls
 
     [<JavaScript>]
     let User (firstName, lastName) age isMale comments liveUser submit =
         Div [
             Div [
                 Label [Text "First name:"]
-                Piglet.Controls.Input firstName
+                C.Input firstName
             ]
             Div [
                 Label [Text "Last name:"]
-                Piglet.Controls.Input lastName
+                C.Input lastName
             ]
             Div [
-                Piglet.Controls.CheckBox isMale -< [Attr.Id "ismale"]
+                C.CheckBox isMale -< [Attr.Id "ismale"]
                 Label [Text "Male"; Attr.For "ismale"]
             ]
             Div [
                 Label [Text "Age:"]
-                Piglet.Controls.IntInput age
+                C.IntInput age
             ]
             Div [
                 Label [Text "Comments:"]
-                Piglet.Controls.TextArea comments
+                C.TextArea comments
             ]
-            Piglet.Controls.Show liveUser Div <| function
-                | Success u ->
-                    [
-                        Attr.Style "border:solid 1px #bbb;margin:10px;padding:5px"
-                        B [Text "Summary: "] :> IPagelet
-                        Text (User.Pretty u)
+            Table [
+                TBody [
+                    TR [
+                        TH [Attr.ColSpan "5"] -< [Text "Summary"]
                     ]
-                | Failure msgs ->
-                    [
-                        yield Attr.Style "border:solid 1px #c00;color:#c00;margin:10px;padding:5px"
-                        for m in msgs do yield Text m; yield (Br [] :> _)
+                    TR [
+                        TH [Text "First name"]
+                        TH [Text "Last name"]
+                        TH [Text "Gender"]
+                        TH [Text "Age"]
+                        TH [Text "Comments"]
                     ]
+                    TR [
+                        // This one will show up even if other parts are invalid
+                        TD |> C.ShowString firstName id
+                        // These will only show up if the whole user is valid
+                        TD |> C.ShowString liveUser (fun u -> u.name.lastName)
+                        TD |> C.ShowString liveUser (fun u -> if u.isMale then "Male" else "Female")
+                        TD |> C.ShowString liveUser (fun u -> string u.age)
+                        TD |> C.Show liveUser (fun u ->
+                            if u.comments = "" then
+                                [I [Text "(no comment)"]]
+                            else [Span [Text u.comments]])
+                    ]
+                ]
+            ]
+            Div |> C.ShowErrors liveUser (fun msgs ->
+                [
+                    Div [Attr.Style "border:solid 1px #c00;color:#c00;margin:10px;padding:5px"] -< [
+                        for m in msgs do
+                            yield Text m
+                            yield (Br [] :> _)
+                    ]
+                ])
             Div [
-                Piglet.Controls.Submit submit
+                C.Submit submit
             ]
             Div [
                 Br []; Br []
                 Label [Text "Age again:"]
-                Piglet.Controls.IntInput age
+                C.IntInput age
                 Span [Text "(just to test several inputs connected to the same stream)"]
             ]
         ]
