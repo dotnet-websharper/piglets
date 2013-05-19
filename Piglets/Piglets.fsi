@@ -89,30 +89,46 @@ module Piglet =
 
         /// Display a reactive value.
         val ShowResult :
-            Reader: Reader<'a> ->
+            reader: Reader<'a> ->
             render: (Result<'a> -> #seq<#IPagelet>) ->
             container: (seq<IPagelet> -> Element) ->
             Element
 
         /// Display a reactive value, or nothing if it is invalid.
         val Show :
-            Reader: Reader<'a> ->
+            reader: Reader<'a> ->
             render: ('a -> #seq<#IPagelet>) ->
             container: (seq<IPagelet> -> Element) ->
             Element
 
         /// Display a reactive value, or nothing if it is invalid.
         val ShowString :
-            Reader: Reader<'a> ->
+            reader: Reader<'a> ->
             render: ('a -> string) ->
             container: (seq<IPagelet> -> Element) ->
             Element
 
         /// Display errors, if any.
         val ShowErrors :
-            Reader: Reader<'a> ->
+            reader: Reader<'a> ->
             render: (string list -> #seq<#IPagelet>) ->
             container: (seq<IPagelet> -> Element) ->
+            Element
+
+        /// Add an attribute to an element that depends on a reader.
+        val Attr :
+            reader: Reader<'a> ->
+            attrName: string ->
+            render: ('a -> string) ->
+            Element ->
+            Element
+
+        /// Add a CSS style to an element that depends on a reader.
+        val Css :
+            reader: Reader<'a> ->
+            attrName: string ->
+            render: ('a -> string) ->
+            Element ->
             Element
 
         /// Displays a submit button driven by the given submitter.

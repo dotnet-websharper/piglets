@@ -337,3 +337,33 @@ module Piglet =
         let Button (submit: Writer<unit>) =
             Default.Input [Attr.Type "button"]
             |>! OnClick (fun _ _ -> submit.Trigger(Success()))
+
+        [<JavaScript>]
+        let Attr
+                (reader: Reader<'a>)
+                (attrName: string)
+                (render: 'a -> string)
+                (element: Element) =
+            element
+            |>! OnAfterRender (fun element ->
+                let set x =
+                    match x with
+                    | Failure _ -> ()
+                    | Success x -> element.SetAttribute(attrName, render x)
+                set reader.Latest
+                reader.Subscribe set)
+
+        [<JavaScript>]
+        let Css
+                (reader: Reader<'a>)
+                (attrName: string)
+                (render: 'a -> string)
+                (element: Element) =
+            element
+            |>! OnAfterRender (fun element ->
+                let set x =
+                    match x with
+                    | Failure _ -> ()
+                    | Success x -> element.SetCss(attrName, render x)
+                set reader.Latest
+                reader.Subscribe set)

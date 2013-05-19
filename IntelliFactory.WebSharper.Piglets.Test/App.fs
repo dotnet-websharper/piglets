@@ -83,9 +83,12 @@ module View =
                         TD |> C.ShowString liveUser (fun u -> string u.age)
                         // This one will show up even if other parts are invalid
                         // because it uses the `participates` stream instead of `liveUser`
-                        TD |> C.Show participates (function
-                            | true -> [B [Text "Yes"]]
-                            | false -> [Span [Text "No"]])
+                        TD |> C.ShowString participates (function
+                                | true -> "Yes"
+                                | false -> "No")
+                            |> C.Css participates "font-weight" (function
+                                | true -> "bold"
+                                | false -> "normal")
                         TD |> C.Show liveUser (function
                             | {comments = ""} -> [I [Text "(no comment)"]]
                             | {comments = c} -> [Span [Text c]])
