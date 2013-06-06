@@ -25,6 +25,9 @@ type Piglet<'a, 'v>
 [<AutoOpen>]
 module Pervasives =
 
+    val private (<<^) : ('a -> 'b -> 'c) -> 'b -> ('a -> 'c)
+    val private (>>^) : ('a -> 'b) -> 'a -> ('b -> 'c) -> 'c
+
     /// Apply a Piglet function to a Piglet value.
     val (<*>) : Piglet<'a -> 'b, 'c -> 'd> -> Piglet<'a, 'd -> 'e> -> Piglet<'b, 'c -> 'e>
 
@@ -77,6 +80,9 @@ module Piglet =
 
         /// A Piglet text input.
         val Input : Stream<string> -> label: string -> Element
+
+        /// A Piglet password input.
+        val Password : Stream<string> -> label: string -> Element
 
         /// A Piglet text area.
         val TextArea : Stream<string> -> label: string -> Element

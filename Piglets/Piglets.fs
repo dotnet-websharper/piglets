@@ -223,21 +223,36 @@ module Piglet =
         open IntelliFactory.WebSharper.Html
 
         [<JavaScript>]
-        let Input (stream: Stream<string>) (label: string) =
+        let input ``type`` ofString toString (stream: Stream<'a>) (label: string) =
             let id = nextId()
-            let i = Default.Input [Attr.Type "text"; Attr.Id id]
+            let i = Default.Input [Attr.Type ``type``; Attr.Id id]
             match stream.Latest with
             | Failure _ -> ()
-            | Success x -> i.Value <- x
+            | Success x -> i.Value <- toString x
             stream.Subscribe(function
                 | Success x ->
-                    if i.Value <> x then i.Value <- x
+                    let s = toString x
+                    if i.Value <> s then i.Value <- s
                 | Failure _ -> ())
-            let ev (_: Dom.Event) = stream.Trigger(Success i.Value)
+            let ev (_: Dom.Event) = stream.Trigger(Success (ofString i.Value))
             i.Body.AddEventListener("keyup", ev, true)
             i.Body.AddEventListener("change", ev, true)
             Span [Label [Attr.For id; Text label]; i]
-        
+
+        [<JavaScript>]
+        [<Inline>]
+        let Input stream label =
+            input "text" id id stream label
+
+        [<JavaScript>]
+        [<Inline>]
+        let Password stream label =
+            input "password" id id stream label
+  
+        [<JavaScript>]
+        let IntInput (stream: Stream<int>) (label: string) =
+            input "number" int string stream label
+      
         [<JavaScript>]
         let TextArea (stream: Stream<string>) (label: string) =
             let id = nextId()
@@ -250,22 +265,6 @@ module Piglet =
                     if i.Value <> x then i.Value <- x
                 | Failure _ -> ())
             let ev (_: Dom.Event) = stream.Trigger(Success i.Value)
-            i.Body.AddEventListener("keyup", ev, true)
-            i.Body.AddEventListener("change", ev, true)
-            Span [Label [Attr.For id; Text label]; i]
-
-        [<JavaScript>]
-        let IntInput (stream: Stream<int>) (label: string) =
-            let id = nextId()
-            let i = Default.Input [Attr.Type "number"]
-            match stream.Latest with
-            | Failure _ -> ()
-            | Success x -> i.Value <- string x
-            stream.Subscribe(function
-                | Success x ->
-                    if int i.Value <> x then i.Value <- string x
-                | Failure _ -> ())
-            let ev (_: Dom.Event) = stream.Trigger(Success(int i.Value))
             i.Body.AddEventListener("keyup", ev, true)
             i.Body.AddEventListener("change", ev, true)
             Span [Label [Attr.For id; Text label]; i]
