@@ -1,0 +1,10 @@
+<ivy-module version="2.0">
+  <info organisation="IntelliFactory" module="websharper.piglets" revision="2.5" />
+  <publications>
+    <artifact name="IntelliFactory.WebSharper.Piglets" ext="dll" type="bin" />
+    <artifact name="IntelliFactory.WebSharper.Piglets" ext="pdb" type="debug" />
+  </publications>
+  <dependencies>
+    <dependency name="WebSharper" rev="latest.integration" />
+  </dependencies>
+</ivy-module>
