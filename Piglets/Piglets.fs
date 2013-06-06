@@ -11,12 +11,19 @@ type Result<'a> =
         | Failure _ -> false
 
     [<JavaScript>]
-    static member Ap(r1, r2) =
+    static member Ap(r1: Result<'a -> 'b>, r2: Result<'a>) =
         match r1, r2 with
         | Success f, Success x -> Success(f x)
         | Failure m, Success _
         | Success _, Failure m -> Failure m
         | Failure m1, Failure m2 -> Failure(m1 @ m2)
+
+    [<JavaScript>]
+    static member Join (r: Result<Result<'a>>) =
+        match r with
+        | Failure m
+        | Success (Failure m) -> Failure m
+        | Success (Success x) -> Success x
 
 [<Interface>]
 type Reader<'a> =
@@ -54,9 +61,16 @@ module private Stream =
 
     [<JavaScript>]
     let Ap (sf: Stream<'a -> 'b>) (sx: Stream<'a>) : Stream<'b> =
-        let out = Stream(Result<_>.Ap(sf.Latest, sx.Latest))
-        sf.Subscribe(fun f -> out.Trigger(Result<_>.Ap(f, sx.Latest)))
-        sx.Subscribe(fun x -> out.Trigger(Result<_>.Ap(sf.Latest, x)))
+        let out = Stream(Result.Ap(sf.Latest, sx.Latest))
+        sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, sx.Latest)))
+        sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, x)))
+        out
+
+    [<JavaScript>]
+    let ApJoin (sf: Stream<'a -> 'b>) (sx: Stream<Result<'a>>) : Stream<'b> =
+        let out = Stream(Result.Ap(sf.Latest, Result.Join sx.Latest))
+        sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, Result.Join sx.Latest)))
+        sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, Result.Join x)))
         out
 
 type Piglet<'a, 'v> =
@@ -82,6 +96,13 @@ module Pervasives =
     let (<*>) f x =
         {
             stream = Stream.Ap f.stream x.stream
+            view = f.view >> x.view
+        }
+
+    [<JavaScript>]
+    let (<*?>) f x =
+        {
+            stream = Stream.ApJoin f.stream x.stream
             view = f.view >> x.view
         }
 

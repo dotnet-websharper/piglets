@@ -28,6 +28,9 @@ module Pervasives =
     /// Apply a Piglet function to a Piglet value.
     val (<*>) : Piglet<'a -> 'b, 'c -> 'd> -> Piglet<'a, 'd -> 'e> -> Piglet<'b, 'c -> 'e>
 
+    /// Apply a Piglet function to a Piglet Result.
+    val (<*?>) : Piglet<'a -> 'b, 'c -> 'd> -> Piglet<Result<'a>, 'd -> 'e> -> Piglet<'b, 'c -> 'e>
+
 module Piglet =
 
     /// Create a Piglet initialized with x that passes its stream to the view.
