@@ -57,6 +57,51 @@ type Stream<'a> [<JavaScript>] (init: Result<'a>) =
         [<JavaScript>] member this.Latest = this.Latest
         [<JavaScript>] member this.Subscribe f = this.Subscribe f
 
+/// I'd rather use an object expression,
+/// but they're forbidden inside [<JS>].
+[<Sealed>]
+type ConcreteWriter<'a> [<JavaScript>] (trigger: Result<'a> -> unit) =
+    interface Writer<'a> with
+        [<JavaScript>]
+        member this.Trigger x = trigger x
+
+/// I'd rather use an object expression,
+/// but they're forbidden inside [<JS>].
+[<Sealed>]
+type ConcreteReader<'a> [<JavaScript>] (latest, subscribe) =
+    interface Reader<'a> with
+        [<JavaScript>]
+        member this.Latest = latest()
+        [<JavaScript>]
+        member this.Subscribe f = subscribe f
+
+[<Sealed>]
+type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
+
+    let output = Stream(Failure [])
+
+    let writer =
+        ConcreteWriter(fun unitIn ->
+            match unitIn, input.Latest with
+            | Failure m1, Failure m2 -> output.Trigger(Failure(m1 @ m2))
+            | Failure m, Success _
+            | Success _, Failure m -> output.Trigger(Failure m)
+            | Success(), Success x -> output.Trigger(Success x))
+        :> Writer<unit>
+
+    [<JavaScript>]
+    member this.Input = input
+
+    [<JavaScript>]
+    member this.Output = output
+
+    interface Writer<unit> with
+        [<JavaScript>] member this.Trigger(x) = writer.Trigger(x)
+
+    interface Reader<'a> with
+        [<JavaScript>] member this.Latest = output.Latest
+        [<JavaScript>] member this.Subscribe f = output.Subscribe f
+
 module private Stream =
 
     [<JavaScript>]
@@ -115,24 +160,6 @@ module Pervasives =
 
 module Piglet =
 
-    /// I'd rather use an object expression,
-    /// but they're forbidden inside [<JS>].
-    [<Sealed>]
-    type ConcreteWriter<'a> [<JavaScript>] (trigger: Result<'a> -> unit) =
-        interface Writer<'a> with
-            [<JavaScript>]
-            member this.Trigger x = trigger x
-
-    /// I'd rather use an object expression,
-    /// but they're forbidden inside [<JS>].
-    [<Sealed>]
-    type ConcreteReader<'a> [<JavaScript>] (latest, subscribe) =
-        interface Reader<'a> with
-            [<JavaScript>]
-            member this.Latest = latest()
-            [<JavaScript>]
-            member this.Subscribe f = subscribe f
-
     [<JavaScript>]
     let Yield (x: 'a) =
         let s = Stream(Success x)
@@ -150,16 +177,10 @@ module Piglet =
 
     [<JavaScript>]
     let WithSubmit fin =
-        let fout = Stream(Failure [])
-        let submit() =
-            fout.Trigger fin.stream.Latest
-        let canSubmit =
-            ConcreteReader(
-                (fun () -> fin.stream.Latest),
-                fin.stream.Subscribe)
+        let submitter = Submitter(fin.stream)
         {
-            stream = fout
-            view = fin.view <<^ (submit, canSubmit :> Reader<_>)
+            stream = submitter.Output
+            view = fin.view <<^ submitter
         }
 
     [<JavaScript>]
@@ -346,12 +367,16 @@ module Piglet =
             ShowResult reader render container
 
         [<JavaScript>]
-        let Submit (submit, toSubmit: Reader<_>) =
+        let Submit (submit: Writer<_>) =
             Default.Input [Attr.Type "submit"]
-            |>! OnClick (fun _ _ -> submit())
+            |>! OnClick (fun _ _ -> (submit :> Writer<unit>).Trigger(Success()))
+
+        [<JavaScript>]
+        let EnableOnSuccess (reader: Reader<'a>) (element: Element) =
+            element
             |>! OnAfterRender (fun el ->
-                el.Body?disabled <- not toSubmit.Latest.isSuccess
-                toSubmit.Subscribe(fun x -> el.Body?disabled <- not x.isSuccess))
+                el.Body?disabled <- not reader.Latest.isSuccess
+                reader.Subscribe(fun x -> el.Body?disabled <- not x.isSuccess))
 
         [<JavaScript>]
         let Button (submit: Writer<unit>) =

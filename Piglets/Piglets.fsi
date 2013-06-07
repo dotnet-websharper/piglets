@@ -15,10 +15,15 @@ type Writer<'a> =
     abstract member Trigger : Result<'a> -> unit
 
 [<Sealed>]
-[<Class>]
 type Stream<'a> =
     interface Writer<'a>
     interface Reader<'a>
+
+[<Sealed>]
+type Submitter<'a> =
+    interface Writer<unit>
+    interface Reader<'a>
+    member Input : Reader<'a>
 
 type Piglet<'a, 'v>
 
@@ -44,7 +49,7 @@ module Piglet =
 
     /// Create a Piglet value that streams the value every time it receives a signal.
     /// The signaling function is passed to the view.
-    val WithSubmit : Piglet<'a, 'b -> (unit -> unit) * Reader<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
+    val WithSubmit : Piglet<'a, 'b -> Submitter<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
 
     /// Pass this Piglet's stream to the view.
     val TransmitStream : Piglet<'a, 'b -> Stream<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
@@ -141,7 +146,10 @@ module Piglet =
             Element
 
         /// Displays a submit button driven by the given submitter.
-        val Submit : (unit -> unit) * Reader<'a> -> Element
+        val Submit : Writer<unit> -> Element
 
         /// A button that triggers the given callback.
         val Button : Writer<unit> -> Element
+
+        /// Enables the element when reading Success, disable it when reading Failure.
+        val EnableOnSuccess : Reader<'a> -> Element -> Element
