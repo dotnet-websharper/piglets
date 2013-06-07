@@ -224,6 +224,8 @@ module Piglet =
 
     module Validation =
 
+        open IntelliFactory.WebSharper.EcmaScript
+
         [<JavaScript>]
         let Is pred msg f =
             let s' = Stream(f.stream.Latest)
@@ -238,6 +240,10 @@ module Piglet =
         [<JavaScript>]
         let IsNotEmpty msg f =
             Is ((<>) "") msg f
+
+        [<JavaScript>]
+        let IsMatch re msg f =
+            Is (RegExp re).Test msg f
 
     module Controls =
 

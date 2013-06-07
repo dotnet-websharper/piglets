@@ -79,6 +79,10 @@ module Piglet =
         /// else, `Failure [msg]` is passed on.
         val IsNotEmpty : msg: string -> Piglet<string, 'b> -> Piglet<string, 'b>
 
+        /// If the Piglet value matches the regexp, it is passed on;
+        /// else, `Failure [msg]` is passed on.
+        val IsMatch : regexp: string -> msg: string -> Piglet<string, 'b> -> Piglet<string, 'b>
+
     module Controls =
 
         open IntelliFactory.WebSharper.Html
