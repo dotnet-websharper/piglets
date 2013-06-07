@@ -118,28 +118,28 @@ module Piglet =
         val ShowResult :
             reader: Reader<'a> ->
             render: (Result<'a> -> #seq<#IPagelet>) ->
-            container: (seq<#IPagelet> -> Element) ->
+            container: Element ->
             Element
 
         /// Display a reactive value, or nothing if it is invalid.
         val Show :
             reader: Reader<'a> ->
             render: ('a -> #seq<#IPagelet>) ->
-            container: (seq<#IPagelet> -> Element) ->
+            container: Element ->
             Element
 
         /// Display a reactive value, or nothing if it is invalid.
         val ShowString :
             reader: Reader<'a> ->
             render: ('a -> string) ->
-            container: (seq<#IPagelet> -> Element) ->
+            container: Element ->
             Element
 
         /// Display errors, if any.
         val ShowErrors :
             reader: Reader<'a> ->
             render: (string list -> #seq<#IPagelet>) ->
-            container: (seq<#IPagelet> -> Element) ->
+            container: Element ->
             Element
 
         /// Add an attribute to an element that depends on a reader.

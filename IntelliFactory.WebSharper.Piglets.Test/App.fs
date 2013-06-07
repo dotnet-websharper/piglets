@@ -77,25 +77,25 @@ module View =
                     ]
                     TR [
                         // These will only show up if the whole user is valid
-                        TD |> C.ShowString liveUser (fun u -> u.name.firstName)
-                        TD |> C.ShowString liveUser (fun u -> u.name.lastName)
-                        TD |> C.ShowString liveUser (fun u -> if u.gender = Male then "Male" else "Female")
-                        TD |> C.ShowString liveUser (fun u -> string u.age)
+                        TD [] |> C.ShowString liveUser (fun u -> u.name.firstName)
+                        TD [] |> C.ShowString liveUser (fun u -> u.name.lastName)
+                        TD [] |> C.ShowString liveUser (fun u -> if u.gender = Male then "Male" else "Female")
+                        TD [] |> C.ShowString liveUser (fun u -> string u.age)
                         // This one will show up even if other parts are invalid
                         // because it uses the `participates` stream instead of `liveUser`
-                        TD |> C.ShowString participates (function
+                        TD [] |> C.ShowString participates (function
                                 | true -> "Yes"
                                 | false -> "No")
                             |> C.Css participates "font-weight" (function
                                 | true -> "bold"
                                 | false -> "normal")
-                        TD |> C.Show liveUser (function
+                        TD [] |> C.Show liveUser (function
                             | {comments = ""} -> [I [Text "(no comment)"]]
                             | {comments = c} -> [Span [Text c]])
                     ]
                 ]
             ]
-            Div |> C.ShowErrors liveUser (fun msgs ->
+            Div [] |> C.ShowErrors liveUser (fun msgs ->
                 [
                     Div [Attr.Style "border:solid 1px #c00;color:#c00;margin:10px;padding:5px"] -< [
                         for m in msgs do
