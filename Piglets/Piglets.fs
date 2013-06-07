@@ -205,6 +205,27 @@ module Piglet =
         }
 
     [<JavaScript>]
+    let MapResult m f =
+        let out = Stream(m f.stream.Latest)
+        f.stream.Subscribe(out.Trigger << m)
+        {
+            stream = out
+            view = f.view
+        }
+
+    [<JavaScript>]
+    let MapToResult m f =
+        f |> MapResult (function
+            | Failure msg -> Failure msg
+            | Success x -> m x)
+
+    [<JavaScript>]
+    let Map m f =
+        f |> MapResult (function
+            | Failure msg -> Failure msg
+            | Success x -> Success (m x))
+
+    [<JavaScript>]
     let Run action f =
         f.stream.Subscribe(function
             | Success x -> action x

@@ -60,7 +60,16 @@ module Piglet =
     /// Pass a writer for this Piglet's stream to the view.
     val TransmitWriter : Piglet<'a, 'b -> Writer<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
 
-    /// Runs the action every time the Piglet's stream receives data.
+    /// Map the value of a Piglet, without changing its view.
+    val Map : ('a -> 'b) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+
+    /// Map the value of a Piglet, without changing its view.
+    val MapToResult : ('a -> Result<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+
+    /// Map the Result of a Piglet, without changing its view.
+    val MapResult : (Result<'a> -> Result<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+
+    /// Run the action every time the Piglet's stream receives data.
     val Run : action: ('a -> unit) -> Piglet<'a, 'b> -> Piglet<'a, 'b>
 
     /// Run a Piglet UI with the given view.
