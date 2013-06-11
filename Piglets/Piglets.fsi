@@ -67,6 +67,15 @@ module Piglet =
     val MapToResult : ('a -> Result<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
 
     /// Map the Result of a Piglet, without changing its view.
+    val MapAsyncResult : (Result<'a> -> Async<Result<'b>>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+
+    /// Map the value of a Piglet, without changing its view.
+    val MapAsync : ('a -> Async<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+
+    /// Map the value of a Piglet, without changing its view.
+    val MapToAsyncResult : ('a -> Async<Result<'b>>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+
+    /// Map the Result of a Piglet, without changing its view.
     val MapResult : (Result<'a> -> Result<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
 
     /// Run the action every time the Piglet's stream receives data.

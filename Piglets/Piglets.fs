@@ -226,6 +226,40 @@ module Piglet =
             | Success x -> Success (m x))
 
     [<JavaScript>]
+    let MapAsyncResult m f =
+        let out = Stream (Failure [])
+        f.stream.Subscribe (fun v ->
+            async {
+                let! res = m v
+                return out.Trigger res
+            } |> Async.Start)
+        async {
+            let! res = m f.stream.Latest
+            return out.Trigger res
+        }
+        |> Async.Start
+        {
+            stream = out
+            view = f.view
+        }
+
+    [<JavaScript>]
+    let MapToAsyncResult m f =
+        f |> MapAsyncResult (function
+            | Failure msg -> async.Return (Failure msg)
+            | Success x -> m x)
+
+    [<JavaScript>]
+    let MapAsync m f =
+        f |> MapAsyncResult (function
+            | Failure msg -> async.Return (Failure msg)
+            | Success x ->
+                async {
+                    let! res = m x
+                    return Success res
+                })
+
+    [<JavaScript>]
     let Run action f =
         f.stream.Subscribe(function
             | Success x -> action x
