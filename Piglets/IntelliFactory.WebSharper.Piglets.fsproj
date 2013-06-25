@@ -28,6 +28,7 @@
     <AssemblyName>$(Name)</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <WarningLevel>3</WarningLevel>
+    <DocumentationFile>bin\$(Configuration)\IntelliFactory.WebSharper.Piglets.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Piglets.fsi" />
