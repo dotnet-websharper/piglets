@@ -305,9 +305,8 @@ module Piglet =
         open IntelliFactory.WebSharper.Html
 
         [<JavaScript>]
-        let input ``type`` ofString toString (stream: Stream<'a>) (label: string) =
-            let id = nextId()
-            let i = Default.Input [Attr.Type ``type``; Attr.Id id]
+        let input ``type`` ofString toString (stream: Stream<'a>) =
+            let i = Default.Input [Attr.Type ``type``]
             match stream.Latest with
             | Failure _ -> ()
             | Success x -> i.Value <- toString x
@@ -319,25 +318,34 @@ module Piglet =
             let ev (_: Dom.Event) = stream.Trigger(Success (ofString i.Value))
             i.Body.AddEventListener("keyup", ev, true)
             i.Body.AddEventListener("change", ev, true)
-            Span [Label [Attr.For id; Text label]; i]
+            i
+
+        [<JavaScript>]
+        let WithLabel label element =
+            let id = nextId()
+            Span [Label [Attr.For id; Text label]; element -< [Attr.Id id]]
+
+        [<JavaScript>]
+        let WithLabelAfter label element =
+            let id = nextId()
+            Span [element -< [Attr.Id id]; Label [Attr.For id; Text label]]
 
         [<JavaScript>]
         [<Inline>]
-        let Input stream label =
-            input "text" id id stream label
+        let Input stream =
+            input "text" id id stream
 
         [<JavaScript>]
         [<Inline>]
-        let Password stream label =
-            input "password" id id stream label
+        let Password stream =
+            input "password" id id stream
   
         [<JavaScript>]
-        let IntInput (stream: Stream<int>) (label: string) =
-            input "number" int string stream label
+        let IntInput (stream: Stream<int>) =
+            input "number" int string stream
       
         [<JavaScript>]
-        let TextArea (stream: Stream<string>) (label: string) =
-            let id = nextId()
+        let TextArea (stream: Stream<string>) =
             let i = Default.TextArea []
             match stream.Latest with
             | Failure _ -> ()
@@ -349,10 +357,10 @@ module Piglet =
             let ev (_: Dom.Event) = stream.Trigger(Success i.Value)
             i.Body.AddEventListener("keyup", ev, true)
             i.Body.AddEventListener("change", ev, true)
-            Span [Label [Attr.For id; Text label]; i]
+            i
 
         [<JavaScript>]
-        let CheckBox (stream: Stream<bool>) (label: string) =
+        let CheckBox (stream: Stream<bool>) =
             let id = nextId()
             let i = Default.Input [Attr.Type "checkbox"; Attr.Id id]
             match stream.Latest with
@@ -364,7 +372,7 @@ module Piglet =
                 | Failure _ -> ())
             let ev (_: Dom.Event) = stream.Trigger(Success i.Body?``checked``)
             i.Body.AddEventListener("change", ev, true)
-            Span [i; Label [Attr.For id; Text label]]
+            i
 
         [<JavaScript>]
         let Radio (stream: Stream<'a>) (values: seq<'a * string>) =
