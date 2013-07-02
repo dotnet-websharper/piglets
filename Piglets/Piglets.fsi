@@ -165,11 +165,27 @@ module Piglet =
             Element ->
             Element
 
+        /// Add an attribute to an element that depends on a reader.
+        val AttrResult :
+            reader: Reader<'a> ->
+            attrName: string ->
+            render: (Result<'a> -> string) ->
+            Element ->
+            Element
+
         /// Add a CSS style to an element that depends on a reader.
         val Css :
             reader: Reader<'a> ->
             attrName: string ->
             render: ('a -> string) ->
+            Element ->
+            Element
+
+        /// Add a CSS style to an element that depends on a reader.
+        val CssResult :
+            reader: Reader<'a> ->
+            attrName: string ->
+            render: (Result<'a> -> string) ->
             Element ->
             Element
 

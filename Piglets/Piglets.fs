@@ -469,6 +469,18 @@ module Piglet =
                 reader.Subscribe set)
 
         [<JavaScript>]
+        let AttrResult
+                (reader: Reader<'a>)
+                (attrName: string)
+                (render: Result<'a> -> string)
+                (element: Element) =
+            element
+            |>! OnAfterRender (fun element ->
+                let set x = element.SetAttribute(attrName, render x)
+                set reader.Latest
+                reader.Subscribe set)
+
+        [<JavaScript>]
         let Css
                 (reader: Reader<'a>)
                 (attrName: string)
@@ -480,5 +492,17 @@ module Piglet =
                     match x with
                     | Failure _ -> ()
                     | Success x -> element.SetCss(attrName, render x)
+                set reader.Latest
+                reader.Subscribe set)
+
+        [<JavaScript>]
+        let CssResult
+                (reader: Reader<'a>)
+                (attrName: string)
+                (render: Result<'a> -> string)
+                (element: Element) =
+            element
+            |>! OnAfterRender (fun element ->
+                let set x = element.SetCss(attrName, render x)
                 set reader.Latest
                 reader.Subscribe set)
