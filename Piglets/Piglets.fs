@@ -3,29 +3,51 @@
 open IntelliFactory.WebSharper
 
 type Result<'a> =
-    | Success of 'a
-    | Failure of string list
+    {
+        Value : 'a option
+        Errors : string list
+    }
 
     [<JavaScript>]
-    member this.isSuccess =
-        match this with
-        | Success _ -> true
-        | Failure _ -> false
+    static member Success (x: 'a) =
+        { Value = Some x; Errors = [] }
 
+    [<JavaScript>]
+    static member Empty =
+        { Value = None; Errors = [] }
+
+    [<JavaScript>]
+    member this.IsSuccess =
+        not this.Errors.IsEmpty
+
+module Result =
+    [<JavaScript>]
+    [<Inline>]
+    let Value x = x.Value
+
+    [<JavaScript>]
+    [<Inline>]
+    let Errors x = x.Errors
+
+type Result<'a> with
     [<JavaScript>]
     static member Ap(r1: Result<'a -> 'b>, r2: Result<'a>) =
-        match r1, r2 with
-        | Success f, Success x -> Success(f x)
-        | Failure m, Success _
-        | Success _, Failure m -> Failure m
-        | Failure m1, Failure m2 -> Failure(m1 @ m2)
+        {
+            Value =
+                match r1.Value, r2.Value with
+                | Some f, Some x
+                    when r1.Errors.IsEmpty && r2.Errors.IsEmpty ->
+                    Some (f x)
+                | _ -> None
+            Errors = r1.Errors @ r2.Errors
+        }
 
     [<JavaScript>]
     static member Join (r: Result<Result<'a>>) =
-        match r with
-        | Failure m
-        | Success (Failure m) -> Failure m
-        | Success (Success x) -> Success x
+        {
+            Value = Option.bind Result.Value r.Value
+            Errors = r.Errors @ defaultArg (Option.map Result.Errors r.Value) []
+        }
 
 [<Interface>]
 type Reader<'a> =
@@ -80,15 +102,14 @@ type ConcreteReader<'a> [<JavaScript>] (latest, subscribe) =
 [<Sealed>]
 type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
 
-    let output = Stream(Failure [])
+    let output = Stream({ Value = None; Errors = input.Latest.Errors })
 
     let writer =
         ConcreteWriter(fun unitIn ->
-            match unitIn, input.Latest with
-            | Failure m1, Failure m2 -> output.Trigger(Failure(m1 @ m2))
-            | Failure m, Success _
-            | Success _, Failure m -> output.Trigger(Failure m)
-            | Success(), Success x -> output.Trigger(Success x))
+            output.Trigger {
+                Value = input.Latest.Value
+                Errors = input.Latest.Errors @ unitIn.Errors
+            })
         :> Writer<unit>
 
     [<JavaScript>]
@@ -157,7 +178,7 @@ module Piglet =
 
     [<JavaScript>]
     let Yield (x: 'a) =
-        let s = Stream(Success x)
+        let s = Stream(Result.Success x)
         {
             stream = s
             view = fun f -> f s
@@ -166,7 +187,7 @@ module Piglet =
     [<JavaScript>]
     let Return (x: 'a) =
         {
-            stream = Stream(Success x)
+            stream = Stream(Result.Success x)
             view = id
         }
 
@@ -210,19 +231,21 @@ module Piglet =
 
     [<JavaScript>]
     let MapToResult m f =
-        f |> MapResult (function
-            | Failure msg -> Failure msg
-            | Success x -> m x)
+        f |> MapResult (fun r ->
+            match r.Value with
+            | None -> { Value = None; Errors = r.Errors }
+            | Some v ->
+                let res = m v
+                { res with Errors = r.Errors @ res.Errors })
 
     [<JavaScript>]
     let Map m f =
-        f |> MapResult (function
-            | Failure msg -> Failure msg
-            | Success x -> Success (m x))
+        f |> MapResult (fun r ->
+            { Value = Option.map m r.Value; Errors = r.Errors })
 
     [<JavaScript>]
     let MapAsyncResult m f =
-        let out = Stream (Failure [])
+        let out = Stream ({ Value = None; Errors = f.stream.Latest.Errors })
         f.stream.Subscribe (fun v ->
             async {
                 let! res = m v
@@ -240,18 +263,24 @@ module Piglet =
 
     [<JavaScript>]
     let MapToAsyncResult m f =
-        f |> MapAsyncResult (function
-            | Failure msg -> async.Return (Failure msg)
-            | Success x -> m x)
+        f |> MapAsyncResult (fun v ->
+            match v.Value with
+            | None -> async.Return { Value = None; Errors = v.Errors }
+            | Some x ->
+                async {
+                    let! v' = m x
+                    return { Value = v'.Value; Errors = v.Errors @ v'.Errors }
+                })
 
     [<JavaScript>]
     let MapAsync m f =
-        f |> MapAsyncResult (function
-            | Failure msg -> async.Return (Failure msg)
-            | Success x ->
+        f |> MapAsyncResult (fun v ->
+            match v.Value with
+            | None -> async.Return { Value = None; Errors = v.Errors }
+            | Some x ->
                 async {
                     let! res = m x
-                    return Success res
+                    return { Value = Some res; Errors = v.Errors }
                 })
 
     [<JavaScript>]
