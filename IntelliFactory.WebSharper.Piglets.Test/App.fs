@@ -51,7 +51,7 @@ module View =
 
     open Model
     open IntelliFactory.WebSharper.Html
-    module C = Piglet.Controls
+    module C = IntelliFactory.WebSharper.Piglets.Controls
 
     [<JavaScript>]
     let User (firstName, lastName) age gender comments participates liveUser submit =
