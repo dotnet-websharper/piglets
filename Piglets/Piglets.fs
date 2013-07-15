@@ -2,15 +2,37 @@
 
 open IntelliFactory.WebSharper
 
+module Id =
+
+    [<JavaScript>]
+    let next =
+        let current = ref 0
+        fun () ->
+            // must increment first: id 0 is reserved.
+            incr current
+            !current
+
+type ErrorSourceId = int
+
+[<Sealed>]
+type ErrorMessage [<JavaScript>] (message, source) =
+    [<JavaScript>]
+    member this.Message : string = message
+    [<JavaScript>]
+    member this.Source : ErrorSourceId = source
+
 type Result<'a> =
     | Success of 'a
-    | Failure of string list
+    | Failure of ErrorMessage list
 
     [<JavaScript>]
     member this.isSuccess =
         match this with
         | Success _ -> true
         | Failure _ -> false
+
+    [<JavaScript>]
+    static member Failwith msg : Result<'a> = Failure [ErrorMessage(msg, 0)]
 
     [<JavaScript>]
     static member Ap(r1: Result<'a -> 'b>, r2: Result<'a>) =
@@ -27,25 +49,44 @@ type Result<'a> =
         | Success (Failure m) -> Failure m
         | Success (Success x) -> Success x
 
-[<Interface>]
-type Reader<'a> =
+[<AbstractClass>]
+type Reader<'a> [<JavaScript>] (id) =
     abstract member Latest : Result<'a>
     abstract member Subscribe : (Result<'a> -> unit) -> unit
 
-[<Interface>]
-type Writer<'a> =
+    [<JavaScript>]
+    member this.SubscribeImmediate f =
+        f this.Latest
+        this.Subscribe f
+
+    [<JavaScript>]
+    member this.Id = id
+
+    [<JavaScript>]
+    member this.Through (r: Reader<'b>) =
+        let out = Stream(this.Latest)
+        r.Subscribe(function
+            | Success _ -> out.Trigger(this.Latest)
+            | Failure msgs ->
+                match this.Latest, msgs |> List.filter (fun m -> m.Source = this.Id) with
+                | _, [] -> out.Trigger this.Latest
+                | Success x, l -> out.Trigger (Failure l)
+                | Failure l, l' -> out.Trigger (Failure (l @ l')))
+        out :> Reader<'a>
+
+and [<Interface>] Writer<'a> =
     abstract member Trigger : Result<'a> -> unit
 
-[<Sealed>]
-type Stream<'a> [<JavaScript>] (init: Result<'a>) =
+and [<Sealed>] Stream<'a> [<JavaScript>] (init: Result<'a>, ?id) =
+    inherit Reader<'a>(match id with Some id -> id | None -> Id.next())
     let s = IntelliFactory.Reactive.HotStream.New init
 
     [<JavaScript>]
-    member this.Latest =
+    override this.Latest =
         (!s.Latest).Value
 
     [<JavaScript>]
-    member this.Subscribe f =
+    override this.Subscribe f =
         s.Add f
 
     [<JavaScript>]
@@ -54,10 +95,7 @@ type Stream<'a> [<JavaScript>] (init: Result<'a>) =
 
     interface Writer<'a> with
         [<JavaScript>] member this.Trigger x = this.Trigger x
-
-    interface Reader<'a> with
-        [<JavaScript>] member this.Latest = this.Latest
-        [<JavaScript>] member this.Subscribe f = this.Subscribe f
+            
 
 /// I'd rather use an object expression,
 /// but they're forbidden inside [<JS>].
@@ -71,14 +109,15 @@ type ConcreteWriter<'a> [<JavaScript>] (trigger: Result<'a> -> unit) =
 /// but they're forbidden inside [<JS>].
 [<Sealed>]
 type ConcreteReader<'a> [<JavaScript>] (latest, subscribe) =
-    interface Reader<'a> with
-        [<JavaScript>]
-        member this.Latest = latest()
-        [<JavaScript>]
-        member this.Subscribe f = subscribe f
+    inherit Reader<'a>(Id.next())
+    [<JavaScript>]
+    override this.Latest = latest()
+    [<JavaScript>]
+    override this.Subscribe f = subscribe f
 
 [<Sealed>]
 type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
+    inherit Reader<'a>(Id.next())
 
     let output = Stream(Failure [])
 
@@ -97,12 +136,14 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
     [<JavaScript>]
     member this.Output = output
 
+    [<JavaScript>]
+    member this.Trigger() = writer.Trigger(Success())
+
     interface Writer<unit> with
         [<JavaScript>] member this.Trigger(x) = writer.Trigger(x)
 
-    interface Reader<'a> with
-        [<JavaScript>] member this.Latest = output.Latest
-        [<JavaScript>] member this.Subscribe f = output.Subscribe f
+    [<JavaScript>] override this.Latest = output.Latest
+    [<JavaScript>] override this.Subscribe f = output.Subscribe f
 
 module private Stream =
 
@@ -278,11 +319,11 @@ module Piglet =
 
         [<JavaScript>]
         let Is pred msg f =
-            let s' = Stream(f.stream.Latest)
+            let s' = Stream(f.stream.Latest, f.stream.Id)
             f.stream.Subscribe(function
                 | Failure m -> s'.Trigger (Failure m)
                 | Success x when pred x -> s'.Trigger (Success x)
-                | _ -> s'.Trigger (Failure [msg]))
+                | _ -> s'.Trigger (Failure [ErrorMessage(msg, s'.Id)]))
             { f with
                 stream = s'
             }

@@ -139,7 +139,7 @@ let ShowErrors
         (container: Element) =
     let render = function
         | Success (x: 'a) -> Seq.empty
-        | Failure m -> render m :> seq<_>
+        | Failure m -> render (m |> List.map (fun m -> m.Message)) :> seq<_>
     ShowResult reader render container
 
 [<JavaScript>]

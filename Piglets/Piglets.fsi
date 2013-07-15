@@ -1,32 +1,47 @@
 ﻿namespace IntelliFactory.WebSharper.Piglets
 
+type ErrorSourceId = int
+
+[<Sealed>]
+[<Class>]
+type ErrorMessage =
+    member Message : string
+    member Source : ErrorSourceId
+
 type Result<'a> =
     | Success of 'a
-    | Failure of string list
+    | Failure of ErrorMessage list
 
+    static member Failwith : string -> Result<'a>
     member isSuccess : bool
 
+[<AbstractClass>]
 type Reader<'a> =
     abstract member Latest : Result<'a>
     abstract member Subscribe : (Result<'a> -> unit) -> unit
+    member SubscribeImmediate : (Result<'a> -> unit) -> unit
+    member Through : Reader<'b> -> Reader<'a>
 
 [<Interface>]
 type Writer<'a> =
     abstract member Trigger : Result<'a> -> unit
 
 [<Sealed>]
+[<Class>]
 type Stream<'a> =
     interface Writer<'a>
-    interface Reader<'a>
-    member Latest : Result<'a>
-    member Subscribe : (Result<'a> -> unit) -> unit
+    inherit Reader<'a>
+    override Latest : Result<'a>
+    override Subscribe : (Result<'a> -> unit) -> unit
     member Trigger : Result<'a> -> unit
 
 [<Sealed>]
+[<Class>]
 type Submitter<'a> =
     interface Writer<unit>
-    interface Reader<'a>
+    inherit Reader<'a>
     member Input : Reader<'a>
+    member Trigger : unit -> unit
 
 type Piglet<'a, 'v>
 
