@@ -54,12 +54,17 @@ module View =
     module C = IntelliFactory.WebSharper.Piglets.Controls
 
     [<JavaScript>]
+    let RedBgOnError (r: Reader<'a>) =
+        C.CssResult r "background-color" (fun x ->
+            if Result.IsSuccess x then "white" else "#ffa0a0")
+
+    [<JavaScript>]
     let User (firstName, lastName) age gender comments participates liveUser submit =
         Div [
-            Div [C.Input firstName |> C.WithLabel "First name:"]
-            Div [C.Input lastName |> C.WithLabel "Last name:"]
+            Div [C.Input firstName |> RedBgOnError firstName |> C.WithLabel "First name:"]
+            Div [C.Input lastName |> RedBgOnError lastName |> C.WithLabel "Last name:"]
             Div [C.Radio gender [Male, "Male"; Female, "Female"]]
-            Div [C.IntInput age |> C.WithLabel "Age:"]
+            Div [C.IntInput age |> RedBgOnError age |> C.WithLabel "Age:"]
             Div [C.CheckBox participates |> C.WithLabel "Participate in the survey"]
             Div [C.TextArea comments |> C.WithLabel "Comments:"]
             Table [
