@@ -66,6 +66,7 @@ type Stream<'a> =
 type Submitter<'a> =
     inherit Reader<'a>
     interface Writer<unit>
+    member Trigger : unit -> unit
     member Input : Reader<'a>
 
 type Piglet<'a, 'v>

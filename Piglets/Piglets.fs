@@ -167,6 +167,9 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
     [<JavaScript>]
     member this.Output = output
 
+    [<JavaScript>]
+    member this.Trigger() = writer.Trigger(Result.Success())
+
     interface Writer<unit> with
         [<JavaScript>] member this.Trigger(x) = writer.Trigger(x)
 
@@ -294,16 +297,11 @@ module Piglet =
     [<JavaScript>]
     let MapAsyncResult m f =
         let out = Stream ({ Value = None; Errors = f.stream.Latest.Errors })
-        f.stream.Subscribe (fun v ->
+        f.stream.SubscribeImmediate (fun v ->
             async {
                 let! res = m v
                 return out.Trigger res
             } |> Async.Start)
-        async {
-            let! res = m f.stream.Latest
-            return out.Trigger res
-        }
-        |> Async.Start
         {
             stream = out
             view = f.view
@@ -333,9 +331,9 @@ module Piglet =
 
     [<JavaScript>]
     let Run action f =
-        f.stream.Subscribe(function
-            | { Errors = e; Value = Some v } when M.isEmpty e -> action v
-            | _ -> ())
+        f.stream.SubscribeImmediate(function
+            | Result.Success v -> action v
+            | Result.Failure _ -> ())
         f
 
     [<JavaScript>]
