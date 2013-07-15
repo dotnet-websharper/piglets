@@ -33,7 +33,7 @@ module Result =
     [<JavaScript>]
     [<Inline>]
     let IsSuccess x =
-        not x.Errors.IsEmpty
+        x.Errors.IsEmpty && x.Value.IsSome
 
     [<JavaScript>]
     [<Inline>]

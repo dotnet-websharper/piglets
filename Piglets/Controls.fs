@@ -11,9 +11,8 @@ let nextId =
         "plc__" + string !current
 
 [<JavaScript>]
-let input ``type`` ofString toString (stream: Stream<'a>) (label: string) =
-    let id = nextId()
-    let i = Default.Input [Attr.Type ``type``; Attr.Id id]
+let input ``type`` ofString toString (stream: Stream<'a>) =
+    let i = Default.Input [Attr.Type ``type``]
     stream.SubscribeImmediate (fun v ->
         match Result.Value v with
         | Some x ->
@@ -23,25 +22,34 @@ let input ``type`` ofString toString (stream: Stream<'a>) (label: string) =
     let ev (_: Dom.Event) = stream.Trigger(Result.Success (ofString i.Value))
     i.Body.AddEventListener("keyup", ev, true)
     i.Body.AddEventListener("change", ev, true)
-    Span [Label [Attr.For id; Text label]; i]
+    i
 
 [<JavaScript>]
-[<Inline>]
-let Input stream label =
-    input "text" id id stream label
-
-[<JavaScript>]
-[<Inline>]
-let Password stream label =
-    input "password" id id stream label
-  
-[<JavaScript>]
-let IntInput (stream: Stream<int>) (label: string) =
-    input "number" int string stream label
-      
-[<JavaScript>]
-let TextArea (stream: Stream<string>) (label: string) =
+let WithLabel label element =
     let id = nextId()
+    Span [Label [Attr.For id; Text label]; element -< [Attr.Id id]]
+
+[<JavaScript>]
+let WithLabelAfter label element =
+    let id = nextId()
+    Span [element -< [Attr.Id id]; Label [Attr.For id; Text label]]
+
+[<JavaScript>]
+[<Inline>]
+let Input stream =
+    input "text" id id stream
+
+[<JavaScript>]
+[<Inline>]
+let Password stream =
+    input "password" id id stream
+
+[<JavaScript>]
+let IntInput (stream: Stream<int>) =
+    input "number" int string stream
+
+[<JavaScript>]
+let TextArea (stream: Stream<string>) =
     let i = Default.TextArea []
     stream.SubscribeImmediate(fun v ->
         match Result.Value v with
@@ -51,10 +59,10 @@ let TextArea (stream: Stream<string>) (label: string) =
     let ev (_: Dom.Event) = stream.Trigger(Result.Success i.Value)
     i.Body.AddEventListener("keyup", ev, true)
     i.Body.AddEventListener("change", ev, true)
-    Span [Label [Attr.For id; Text label]; i]
+    i
 
 [<JavaScript>]
-let CheckBox (stream: Stream<bool>) (label: string) =
+let CheckBox (stream: Stream<bool>) =
     let id = nextId()
     let i = Default.Input [Attr.Type "checkbox"; Attr.Id id]
     match Result.Value stream.Latest with
@@ -67,7 +75,7 @@ let CheckBox (stream: Stream<bool>) (label: string) =
         | None -> ())
     let ev (_: Dom.Event) = stream.Trigger(Result.Success i.Body?``checked``)
     i.Body.AddEventListener("change", ev, true)
-    Span [i; Label [Attr.For id; Text label]]
+    i
 
 [<JavaScript>]
 let Radio (stream: Stream<'a>) (values: seq<'a * string>) =
@@ -161,6 +169,17 @@ let Attr
             | Some x -> element.SetAttribute(attrName, render x)))
 
 [<JavaScript>]
+let AttrResult
+        (reader: Reader<'a>)
+        (attrName: string)
+        (render: Result<'a> -> string)
+        (element: Element) =
+    element
+    |>! OnAfterRender (fun element ->
+        reader.SubscribeImmediate (fun x ->
+            element.SetAttribute(attrName, render x)))
+
+[<JavaScript>]
 let Css
         (reader: Reader<'a>)
         (attrName: string)
@@ -172,3 +191,14 @@ let Css
             match Result.Value v with
             | None -> ()
             | Some x -> element.SetCss(attrName, render x)))
+
+[<JavaScript>]
+let CssResult
+        (reader: Reader<'a>)
+        (attrName: string)
+        (render: Result<'a> -> string)
+        (element: Element) =
+    element
+    |>! OnAfterRender (fun element ->
+        reader.SubscribeImmediate (fun x ->
+            element.SetCss(attrName, render x)))
