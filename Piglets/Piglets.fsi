@@ -1,31 +1,65 @@
 ﻿namespace IntelliFactory.WebSharper.Piglets
 
-type Result<'a> =
-    | Success of 'a
-    | Failure of string list
+/// Represents the result of a Piglet.
+/// It can be successful or failing with optional error messages.
+[<Sealed>]
+type Result<'a>
 
-    member isSuccess : bool
+module Result =
+    /// Create a successful Result.
+    val Success : 'a -> Result<'a>
 
+    /// Create a failing Result without error message.
+    val Empty : Result<'a>
+
+    /// Check if a Result is successful.
+    val IsSuccess : Result<'a> -> bool
+
+    /// Get the value of a Result, even if it is failing.
+    val Value : Result<'a> -> 'a option
+
+    /// Get the value of a Result, only if it is successful.
+    val SuccessValue : Result<'a> -> 'a option
+
+    /// Get the error messages of a Result.
+    /// Caution: the list can be empty even if the Result is failing.
+    val Errors : Result<'a> -> string list
+
+/// A readable stream.
+[<AbstractClass>]
 type Reader<'a> =
+    /// Get the latest value of the stream.
     abstract member Latest : Result<'a>
+
+    /// Subscribe to subsequent values of the stream.
     abstract member Subscribe : (Result<'a> -> unit) -> unit
 
+    /// Subscribe to the current and subsequent values of the stream.
+    /// `reader.SubscribeImmediate f` is equivalent to
+    /// `f reader.Latest; reader.Subscribe f`.
+    abstract member SubscribeImmediate : (Result<'a> -> unit) -> unit
+
+/// A writeable stream.
 [<Interface>]
 type Writer<'a> =
+    /// Push a value to the stream.
     abstract member Trigger : Result<'a> -> unit
 
+/// A readable and writeable stream.
 [<Sealed>]
+[<Class>]
 type Stream<'a> =
+    inherit Reader<'a>
     interface Writer<'a>
-    interface Reader<'a>
-    member Latest : Result<'a>
-    member Subscribe : (Result<'a> -> unit) -> unit
+
+    /// Push a value to the stream.
     member Trigger : Result<'a> -> unit
 
 [<Sealed>]
+[<Class>]
 type Submitter<'a> =
+    inherit Reader<'a>
     interface Writer<unit>
-    interface Reader<'a>
     member Input : Reader<'a>
 
 type Piglet<'a, 'v>

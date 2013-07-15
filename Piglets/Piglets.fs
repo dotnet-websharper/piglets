@@ -1,58 +1,89 @@
 ﻿namespace IntelliFactory.WebSharper.Piglets
 
+open System.Collections.Generic
 open IntelliFactory.WebSharper
+
+type ValidatorId = int
 
 type Result<'a> =
     {
         Value : 'a option
-        Errors : string list
+        Errors : Map<ValidatorId, string>
     }
 
-    [<JavaScript>]
-    static member Success (x: 'a) =
-        { Value = Some x; Errors = [] }
+module Map =
 
     [<JavaScript>]
-    static member Empty =
-        { Value = None; Errors = [] }
+    let merge m1 m2 = Map.foldBack Map.add m1 m2
 
-    [<JavaScript>]
-    member this.IsSuccess =
-        not this.Errors.IsEmpty
+module M = Map
 
 module Result =
+
+    [<JavaScript>]
+    [<Inline>]
+    let Success (x: 'a) =
+        { Value = Some x; Errors = Map.empty }
+
+    [<JavaScript>]
+    [<Inline>]
+    let Empty : Result<'a> =
+        { Value = None; Errors = Map.empty }
+
+    [<JavaScript>]
+    [<Inline>]
+    let IsSuccess x =
+        not x.Errors.IsEmpty
+
     [<JavaScript>]
     [<Inline>]
     let Value x = x.Value
 
     [<JavaScript>]
+    let SuccessValue x =
+        if Map.isEmpty x.Errors then
+            x.Value
+        else None
+
+    [<JavaScript>]
+    let Errors x =
+        x.Errors
+        |> Seq.map (fun (KeyValue(_, v)) -> v)
+        |> List.ofSeq
+
+    [<JavaScript>]
     [<Inline>]
-    let Errors x = x.Errors
+    let ErrorsMap x =
+        x.Errors
 
 type Result<'a> with
     [<JavaScript>]
     static member Ap(r1: Result<'a -> 'b>, r2: Result<'a>) =
+        let errors = Map.merge r1.Errors r2.Errors
         {
             Value =
                 match r1.Value, r2.Value with
-                | Some f, Some x
-                    when r1.Errors.IsEmpty && r2.Errors.IsEmpty ->
-                    Some (f x)
+                | Some f, Some x when Map.isEmpty errors -> Some (f x)
                 | _ -> None
-            Errors = r1.Errors @ r2.Errors
+            Errors = errors
         }
 
     [<JavaScript>]
     static member Join (r: Result<Result<'a>>) =
         {
             Value = Option.bind Result.Value r.Value
-            Errors = r.Errors @ defaultArg (Option.map Result.Errors r.Value) []
+            Errors = Map.merge r.Errors (defaultArg (Option.map Result.ErrorsMap r.Value) Map.empty)
         }
 
-[<Interface>]
-type Reader<'a> =
+[<AbstractClass>]
+type Reader<'a> [<JavaScript>] () =
     abstract member Latest : Result<'a>
     abstract member Subscribe : (Result<'a> -> unit) -> unit
+    abstract member SubscribeImmediate : (Result<'a> -> unit) -> unit
+    [<JavaScript>]
+    default this.SubscribeImmediate f =
+        f this.Latest
+        this.Subscribe f
 
 [<Interface>]
 type Writer<'a> =
@@ -60,26 +91,31 @@ type Writer<'a> =
 
 [<Sealed>]
 type Stream<'a> [<JavaScript>] (init: Result<'a>) =
+    inherit Reader<'a>()
+
     let s = IntelliFactory.Reactive.HotStream.New init
+    let mutable triggering = false
+    let toTrigger = new Queue<Result<'a>>()
 
     [<JavaScript>]
-    member this.Latest =
+    override this.Latest =
         (!s.Latest).Value
 
     [<JavaScript>]
-    member this.Subscribe f =
+    override this.Subscribe f =
         s.Add f
 
     [<JavaScript>]
     member this.Trigger x =
-        s.Trigger x
+        toTrigger.Enqueue x
+        if not triggering then
+            triggering <- true
+            while toTrigger.Count > 0 do
+                s.Trigger (toTrigger.Dequeue())
+            triggering <- false
 
     interface Writer<'a> with
         [<JavaScript>] member this.Trigger x = this.Trigger x
-
-    interface Reader<'a> with
-        [<JavaScript>] member this.Latest = this.Latest
-        [<JavaScript>] member this.Subscribe f = this.Subscribe f
 
 /// I'd rather use an object expression,
 /// but they're forbidden inside [<JS>].
@@ -93,14 +129,16 @@ type ConcreteWriter<'a> [<JavaScript>] (trigger: Result<'a> -> unit) =
 /// but they're forbidden inside [<JS>].
 [<Sealed>]
 type ConcreteReader<'a> [<JavaScript>] (latest, subscribe) =
-    interface Reader<'a> with
-        [<JavaScript>]
-        member this.Latest = latest()
-        [<JavaScript>]
-        member this.Subscribe f = subscribe f
+    inherit Reader<'a>()
+
+    [<JavaScript>]
+    override this.Latest = latest()
+    [<JavaScript>]
+    override this.Subscribe f = subscribe f
 
 [<Sealed>]
 type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
+    inherit Reader<'a>()
 
     let output = Stream({ Value = None; Errors = input.Latest.Errors })
 
@@ -108,7 +146,7 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
         ConcreteWriter(fun unitIn ->
             output.Trigger {
                 Value = input.Latest.Value
-                Errors = input.Latest.Errors @ unitIn.Errors
+                Errors = Map.merge input.Latest.Errors unitIn.Errors
             })
         :> Writer<unit>
 
@@ -121,9 +159,8 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
     interface Writer<unit> with
         [<JavaScript>] member this.Trigger(x) = writer.Trigger(x)
 
-    interface Reader<'a> with
-        [<JavaScript>] member this.Latest = output.Latest
-        [<JavaScript>] member this.Subscribe f = output.Subscribe f
+    [<JavaScript>] override this.Latest = output.Latest
+    [<JavaScript>] override this.Subscribe f = output.Subscribe f
 
 module private Stream =
 
@@ -236,7 +273,7 @@ module Piglet =
             | None -> { Value = None; Errors = r.Errors }
             | Some v ->
                 let res = m v
-                { res with Errors = r.Errors @ res.Errors })
+                { res with Errors = Map.merge r.Errors res.Errors })
 
     [<JavaScript>]
     let Map m f =
@@ -269,7 +306,7 @@ module Piglet =
             | Some x ->
                 async {
                     let! v' = m x
-                    return { Value = v'.Value; Errors = v.Errors @ v'.Errors }
+                    return { Value = v'.Value; Errors = M.merge v.Errors v'.Errors }
                 })
 
     [<JavaScript>]
@@ -286,8 +323,8 @@ module Piglet =
     [<JavaScript>]
     let Run action f =
         f.stream.Subscribe(function
-            | Success x -> action x
-            | Failure _ -> ())
+            | { Errors = e; Value = Some v } when M.isEmpty e -> action v
+            | _ -> ())
         f
 
     [<JavaScript>]
@@ -306,15 +343,31 @@ module Piglet =
         open IntelliFactory.WebSharper.EcmaScript
 
         [<JavaScript>]
+        let nextId =
+            let current = ref 0
+            fun () ->
+                incr current
+                !current
+
+        [<JavaScript>]
         let Is pred msg f =
-            let s' = Stream(f.stream.Latest)
-            f.stream.Subscribe(function
-                | Failure m -> s'.Trigger (Failure m)
-                | Success x when pred x -> s'.Trigger (Success x)
-                | _ -> s'.Trigger (Failure [msg]))
-            { f with
-                stream = s'
-            }
+            let id = nextId()
+            f.stream.SubscribeImmediate(fun v ->
+                match v.Value with
+                | Some x when pred x ->
+                    // Remove the error message if it was there
+                    match M.tryFind id v.Errors with
+                    | Some _ ->
+                        f.stream.Trigger({ v with Errors = M.remove id v.Errors })
+                    | None -> ()
+                | Some x ->
+                    // Add the error message if it wasn't there
+                    match M.tryFind id v.Errors with
+                    | Some msg -> ()
+                    | None ->
+                        f.stream.Trigger({ v with Errors = M.add id msg v.Errors })
+                | None -> ())
+            f
 
         [<JavaScript>]
         let IsNotEmpty msg f =
