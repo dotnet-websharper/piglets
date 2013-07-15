@@ -32,6 +32,11 @@ module Result =
 
     [<JavaScript>]
     [<Inline>]
+    let Failure msg : Result<'a> =
+        { Value = None; Errors = Map.ofList [0, msg] }
+
+    [<JavaScript>]
+    [<Inline>]
     let IsSuccess x =
         x.Errors.IsEmpty && x.Value.IsSome
 
@@ -55,6 +60,12 @@ module Result =
     [<Inline>]
     let ErrorsMap x =
         x.Errors
+
+    [<JavaScript>]
+    let (|Success|Failure|) x =
+        if x.Value.IsSome && M.isEmpty x.Errors then
+            Success x.Value.Value
+        else Failure (Errors x)
 
 type Result<'a> with
     [<JavaScript>]

@@ -6,11 +6,17 @@
 type Result<'a>
 
 module Result =
+    /// Get the successful value or error messages of a Result.
+    val (|Success|Failure|) : Result<'a> -> Choice<'a, string list>
+
     /// Create a successful Result.
     val Success : 'a -> Result<'a>
 
     /// Create a failing Result without error message.
     val Empty : Result<'a>
+
+    /// Create a failing Result with an error message.
+    val Failure : string -> Result<'a>
 
     /// Check if a Result is successful.
     val IsSuccess : Result<'a> -> bool
