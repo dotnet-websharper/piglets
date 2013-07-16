@@ -22,6 +22,10 @@ type Reader<'a> =
     member SubscribeImmediate : (Result<'a> -> unit) -> unit
     member Through : Reader<'b> -> Reader<'a>
 
+type ErrorMessage with
+    /// Create an error message associated with the given reader.
+    static member Create : string -> Reader<'a> -> ErrorMessage
+
 [<Interface>]
 type Writer<'a> =
     abstract member Trigger : Result<'a> -> unit
@@ -43,7 +47,10 @@ type Submitter<'a> =
     member Input : Reader<'a>
     member Trigger : unit -> unit
 
-type Piglet<'a, 'v>
+[<Sealed>]
+type Piglet<'a, 'v> =
+    /// Retrieve the stream associated with a Piglet.
+    member Stream : Stream<'a>
 
 [<AutoOpen>]
 module Pervasives =
@@ -108,13 +115,19 @@ module Piglet =
     module Validation =
 
         /// If the Piglet value passes the predicate, it is passed on;
-        /// else, `Failure [msg]` is passed on.
+        /// else, `Failwith msg` is passed on.
         val Is : pred: ('a -> bool) -> msg: string -> Piglet<'a, 'b> -> Piglet<'a, 'b>
 
-        /// If the Piglet value is not empty, it is passed on;
+        /// If the Piglet value passes the predicate, it is passed on;
         /// else, `Failure [msg]` is passed on.
-        val IsNotEmpty : msg: string -> Piglet<string, 'b> -> Piglet<string, 'b>
+        val Is' : pred: ('a -> bool) -> msg: ErrorMessage -> Piglet<'a, 'b> -> Piglet<'a, 'b>
 
-        /// If the Piglet value matches the regexp, it is passed on;
-        /// else, `Failure [msg]` is passed on.
-        val IsMatch : regexp: string -> msg: string -> Piglet<string, 'b> -> Piglet<string, 'b>
+        /// Checks that a string is not empty.
+        /// Can be used as predicate for Is and Is', eg:
+        /// Validation.Is Validation.NotEmpty "Field must not be empty."
+        val NotEmpty : value: string -> bool
+
+        /// Check that a string matches a regexp.
+        /// Can be used as predicate for Is and Is', eg:
+        /// Validation.Is (Validation.Match "^test.*") "Field must start with 'test'."
+        val Match : regexp: string -> value: string -> bool

@@ -95,6 +95,11 @@ and [<Sealed>] Stream<'a> [<JavaScript>] (init: Result<'a>, ?id) =
 
     interface Writer<'a> with
         [<JavaScript>] member this.Trigger x = this.Trigger x
+
+type ErrorMessage with
+    [<JavaScript>]
+    static member Create msg (reader: Reader<'a>) =
+        new ErrorMessage(msg, reader.Id)
             
 
 /// I'd rather use an object expression,
@@ -166,6 +171,9 @@ type Piglet<'a, 'v> =
         stream: Stream<'a>
         view: 'v
     }
+
+    [<JavaScript>]
+    member this.Stream = this.stream
 
 [<AutoOpen>]
 module Pervasives =
@@ -318,6 +326,17 @@ module Piglet =
         open IntelliFactory.WebSharper.EcmaScript
 
         [<JavaScript>]
+        let Is' pred msg f =
+            let s' = Stream(f.stream.Latest, f.stream.Id)
+            f.stream.Subscribe(function
+                | Failure m -> s'.Trigger (Failure m)
+                | Success x when pred x -> s'.Trigger (Success x)
+                | _ -> s'.Trigger (Failure [msg]))
+            { f with
+                stream = s'
+            }
+
+        [<JavaScript>]
         let Is pred msg f =
             let s' = Stream(f.stream.Latest, f.stream.Id)
             f.stream.Subscribe(function
@@ -329,9 +348,7 @@ module Piglet =
             }
 
         [<JavaScript>]
-        let IsNotEmpty msg f =
-            Is ((<>) "") msg f
+        let NotEmpty x = x <> ""
 
         [<JavaScript>]
-        let IsMatch re msg f =
-            Is (RegExp re).Test msg f
+        let Match re x = (RegExp re).Test x

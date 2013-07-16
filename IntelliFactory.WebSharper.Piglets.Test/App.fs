@@ -23,14 +23,15 @@ module Model =
 module ViewModel =
 
     open Model
+    module V = Piglet.Validation
 
     [<JavaScript>]
     let Name init =
         Piglet.Return (fun f l -> { firstName = f; lastName = l })
         <*> (Piglet.Yield init.firstName
-            |> Piglet.Validation.IsNotEmpty "First name should not be empty.")
+            |> V.Is V.NotEmpty "First name should not be empty.")
         <*> (Piglet.Yield init.lastName
-            |> Piglet.Validation.IsNotEmpty "Last name should not be empty.")
+            |> V.Is V.NotEmpty "Last name should not be empty.")
         |> Piglet.MapViewArgs (fun f l -> (f, l))
 
     [<JavaScript>]
