@@ -4,3 +4,6 @@ obj
 .*\.user
 Web/Scripts
 .build
+^packages/
+^tools/packages/
+^build/
