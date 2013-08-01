@@ -27,6 +27,8 @@ val CheckBox : Stream<bool> -> Element
 /// A Piglet radio button set.
 val Radio<'a when 'a : equality> : Stream<'a> -> seq<'a * string> -> Element
 
+val RenderMany : Many.Renderer<'a, 'v, Element> -> (Many.Operations -> 'v) -> Element -> Element
+
 /// Display a reactive value.
 val ShowResult :
     reader: Reader<'a> ->

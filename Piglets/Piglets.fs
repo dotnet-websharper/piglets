@@ -49,6 +49,11 @@ type Result<'a> =
         | Success (Failure m) -> Failure m
         | Success (Success x) -> Success x
 
+    [<JavaScript>]
+    static member Map (f: 'a -> 'b) = function
+        | Success x -> Success (f x)
+        | Failure m -> Failure m
+
 [<AbstractClass>]
 type Reader<'a> [<JavaScript>] (id) =
     abstract member Latest : Result<'a>
@@ -105,7 +110,14 @@ type ErrorMessage with
 /// I'd rather use an object expression,
 /// but they're forbidden inside [<JS>].
 [<Sealed>]
-type ConcreteWriter<'a> [<JavaScript>] (trigger: Result<'a> -> unit) =
+[<JavaScript>]
+type ConcreteWriter<'a> (trigger: Result<'a> -> unit) =
+
+    static member New (trigger: 'a -> unit) =
+        ConcreteWriter<'a>(function
+            | Success x -> trigger x
+            | Failure _ -> ())
+
     interface Writer<'a> with
         [<JavaScript>]
         member this.Trigger x = trigger x
@@ -178,6 +190,12 @@ type Piglet<'a, 'v> =
 [<AutoOpen>]
 module Pervasives =
 
+    [<Inline "$arr.push($x)">]
+    let push (arr: 'T []) (x: 'T) = ()
+
+    [<Direct "Array.prototype.splice.apply($arr, [$index, $howMany].concat($items))">]
+    let splice (arr: 'T []) (index: int) (howMany: int) (items: 'T[]) : 'T [] = items
+
     /// Push an argument to the view function.
     [<JavaScript>]
     [<Inline>]
@@ -202,6 +220,73 @@ module Pervasives =
             view = f.view >> x.view
         }
 
+type Container<'t, 'u> =
+    abstract member Add : 't -> unit
+    abstract member Remove : int -> unit
+    abstract member MoveUp : int -> unit
+    abstract member Container : 'u
+
+[<JavaScript>]
+module Many =
+
+    type Operations(delete: unit -> unit, moveUp: unit -> unit, moveDown: unit -> unit) =
+        member this.Delete = ConcreteWriter.New delete :> Writer<_>
+        member this.MoveUp = ConcreteWriter.New moveUp :> Writer<_>
+        member this.MoveDown = ConcreteWriter.New moveDown :> Writer<_>
+
+    type Renderer<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>, init: 'a) =
+
+        let addTrigger = Stream<unit>(Failure [])
+
+        let streams : Stream<'a>[] = [||]
+
+        let update() =
+            Array.foldBack (fun (cur: Stream<'a>) acc ->
+                match acc, cur.Latest with
+                | Success l, Success x -> Success (x :: l)
+                | Failure m , Success _
+                | Success _, Failure m -> Failure m
+                | Failure m1, Failure m2 -> Failure (m1 @ m2))
+                streams
+                (Success [])
+            |> Result.Map Array.ofList
+            |> out.Trigger
+
+        member this.Render (c: Container<'w, 'u>) (f : Operations -> 'v) : 'u =
+            let add x =
+                let piglet = p x
+                push streams piglet.stream
+                piglet.stream.SubscribeImmediate (fun _ -> update())
+                let getThisIndex() =
+                    streams |> Seq.findIndex (fun x -> x.Id = piglet.stream.Id)
+                let delete () =
+                    let i = getThisIndex()
+                    splice streams i 1 [||] |> ignore
+                    c.Remove i
+                    update()
+                let moveUp i =
+                    if i > 0 && i < streams.Length then
+                        let s = streams.[i]
+                        streams.[i] <- streams.[i-1]
+                        streams.[i-1] <- s
+                        c.MoveUp i
+                        update()
+                let moveDown () =
+                    moveUp (getThisIndex() + 1)
+                let moveUp () = moveUp (getThisIndex())
+                c.Add(piglet.view (f (Operations(delete, moveUp, moveDown))))
+            match out.Latest with
+            | Failure _ -> ()
+            | Success xs -> Array.iter add xs
+            addTrigger.Subscribe(function
+                | Failure _ -> ()
+                | Success () -> add init)
+            c.Container
+
+        member this.Add = addTrigger :> Writer<unit>
+
+        member this.Output = out :> Reader<_>
+
 module Piglet =
 
     [<JavaScript>]
@@ -218,6 +303,19 @@ module Piglet =
             stream = Stream(Success x)
             view = id
         }
+
+    [<JavaScript>]
+    let ManyInit (inits: 'a[]) (init: 'a) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.Renderer<'a, 'v, 'w> -> 'x) -> 'x> =
+        let s = Stream(Success inits)
+        let m = Many.Renderer<'a, 'v, 'w>(p, s, init)
+        {
+            stream = s
+            view = fun f -> f m
+        }
+
+    [<JavaScript>]
+    let Many init p =
+        ManyInit [|init|] init p
 
     [<JavaScript>]
     let WithSubmit fin =

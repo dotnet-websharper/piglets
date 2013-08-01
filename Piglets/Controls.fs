@@ -106,6 +106,32 @@ let Radio (stream: Stream<'a>) (values: seq<'a * string>) =
         stream.Subscribe set)
 
 [<JavaScript>]
+type HtmlContainer (container: Element) =
+    interface Container<Element, Element> with
+
+        member this.Add elt =
+            container.Append elt
+
+        member this.Remove i =
+            container.Body.RemoveChild container.Body.ChildNodes.[i]
+            |> ignore
+
+        member this.MoveUp i =
+            let elt_i = container.Body.ChildNodes.[i]
+            let elt_i_1 = container.Body.ChildNodes.[i-1]
+            container.Body.RemoveChild elt_i |> ignore
+            container.Body.InsertBefore(elt_i, elt_i_1) |> ignore
+
+        member this.Container = container
+
+[<JavaScript>]
+let RenderMany (many: Many.Renderer<_,_,_>) renderOne container =
+    many.Render (HtmlContainer container) renderOne
+
+[<JavaScript>]
+let Container c = HtmlContainer(c) :> Container<_,_>
+
+[<JavaScript>]
 let ShowResult
         (reader: Reader<'a>)
         (render: Result<'a> -> #seq<#IPagelet>)

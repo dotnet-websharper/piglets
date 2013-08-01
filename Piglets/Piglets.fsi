@@ -55,6 +55,8 @@ type Piglet<'a, 'v> =
 [<AutoOpen>]
 module Pervasives =
 
+    val private push : 'a[] -> 'a -> unit
+    val private splice : 'a[] -> int -> int -> 'a[] -> 'a[]
     val private (<<^) : ('a -> 'b -> 'c) -> 'b -> ('a -> 'c)
     val private (>>^) : ('a -> 'b) -> 'a -> ('b -> 'c) -> 'c
 
@@ -64,6 +66,29 @@ module Pervasives =
     /// Apply a Piglet function to a Piglet Result.
     val (<*?>) : Piglet<'a -> 'b, 'c -> 'd> -> Piglet<Result<'a>, 'd -> 'e> -> Piglet<'b, 'c -> 'e>
 
+type Container<'``in``, 'out> =
+    abstract member Add : '``in`` -> unit
+    abstract member Remove : int -> unit
+    abstract member MoveUp : int -> unit
+    abstract member Container : 'out
+
+module Many =
+
+    [<Class>]
+    type Operations =
+        member Delete : Writer<unit>
+        member MoveUp : Writer<unit>
+        member MoveDown : Writer<unit>
+
+    [<Class>]
+    type Renderer<'a, 'v, 'w> =
+    
+        member Render : Container<'w, 'u> -> (Operations -> 'v) -> 'u
+
+        member Add : Writer<unit>
+
+        member Output : Reader<'a[]>
+
 module Piglet =
 
     /// Create a Piglet initialized with x that passes its stream to the view.
@@ -71,6 +96,12 @@ module Piglet =
 
     /// Create a Piglet initialized with x that doesn't pass any stream to the view.
     val Return : 'a -> Piglet<'a, 'b -> 'b>
+
+    /// Create a Piglet that returns many values, each created according to the given Piglet.
+    val Many : 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Renderer<'a, 'v, 'w> -> 'x) -> 'x>
+
+    /// Create a Piglet that returns many values, each created according to the given Piglet.
+    val ManyInit : 'a[] -> 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Renderer<'a, 'v, 'w> -> 'x) -> 'x>
 
     /// Create a Piglet value that streams the value every time it receives a signal.
     /// The signaling function is passed to the view.

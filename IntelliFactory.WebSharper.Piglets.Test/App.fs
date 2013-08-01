@@ -10,7 +10,7 @@ module Model =
     type Gender = Male | Female
 
     type User =
-        { name: Name; age: int; gender: Gender; comments: string; participates: bool }
+        { name: Name; age: int; gender: Gender; comments: string; participates: bool; friends: string[] }
 
         [<JavaScript>]
         static member Pretty u =
@@ -36,13 +36,16 @@ module ViewModel =
 
     [<JavaScript>]
     let User init =
-        Piglet.Return (fun n a g c p -> { name = n; age = a; gender = g; comments = c; participates = p })
+        Piglet.Return (fun n a g c p f -> { name = n; age = a; gender = g; comments = c; participates = p; friends = f })
         <*> Name init.name
         <*> (Piglet.Yield init.age
             |> Piglet.Validation.Is (fun a -> a >= 18) "You must be over 18.")
         <*> Piglet.Yield init.gender
         <*> Piglet.Yield init.comments
         <*> Piglet.Yield init.participates
+        <*> Piglet.ManyInit init.friends "" (fun f ->
+            Piglet.Yield f
+            |> Piglet.Validation.Is Piglet.Validation.NotEmpty "A friend with no name?")
         |> Piglet.TransmitReader
         |> Piglet.WithSubmit
         |> Piglet.Run (fun u ->
@@ -60,7 +63,7 @@ module View =
             if x.isSuccess then "white" else "#ffa0a0")
 
     [<JavaScript>]
-    let User (firstName, lastName) age gender comments participates liveUser submit =
+    let User (firstName, lastName) age gender comments participates (friends: Many.Renderer<_,_,_>) liveUser submit =
         Div [
             Div [C.Input firstName |> RedBgOnError firstName |> C.WithLabel "First name:"]
             Div [C.Input lastName |> RedBgOnError lastName |> C.WithLabel "Last name:"]
@@ -68,6 +71,14 @@ module View =
             Div [C.IntInput age |> RedBgOnError age |> C.WithLabel "Age:"]
             Div [C.CheckBox participates |> C.WithLabel "Participate in the survey"]
             Div [C.TextArea comments |> C.WithLabel "Comments:"]
+            Div [] |> C.RenderMany friends (fun ops friend ->
+                Div [
+                    C.Input friend
+                    C.Button ops.Delete -< [Attr.Value "Delete this friend"]
+                    C.Button ops.MoveUp -< [Attr.Value "Move up"]
+                    C.Button ops.MoveDown -< [Attr.Value "Move down"]
+                ])
+            Div [C.Button friends.Add -< [Attr.Value "Add a friend"]]
             Table [
                 TBody [
                     TR [
@@ -80,6 +91,7 @@ module View =
                         TH [Text "Age"]
                         TH [Text "Participates"]
                         TH [Text "Comments"]
+                        TH [Text "Friends"]
                     ]
                     TR [
                         // These will only show up if the whole user is valid
@@ -98,6 +110,7 @@ module View =
                         TD [] |> C.Show liveUser (function
                             | {comments = ""} -> [I [Text "(no comment)"]]
                             | {comments = c} -> [Span [Text c]])
+                        TD [] |> C.ShowString friends.Output (String.concat ", ")
                     ]
                 ]
             ]
@@ -126,6 +139,7 @@ let UI() =
             gender = Model.Male
             comments = "Blah blah blah"
             participates = true
+            friends = [|"Ernesto"; "Loic"|]
         }
     ViewModel.User initUser
     |> Piglet.Render View.User 
