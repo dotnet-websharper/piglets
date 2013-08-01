@@ -54,6 +54,11 @@ type Result<'a> =
         | Success x -> Success (f x)
         | Failure m -> Failure m
 
+    [<JavaScript>]
+    static member Iter (f: 'a -> unit) = function
+        | Success x -> f x
+        | Failure _ -> ()
+
 [<AbstractClass>]
 type Reader<'a> [<JavaScript>] (id) =
     abstract member Latest : Result<'a>
@@ -229,10 +234,10 @@ type Container<'t, 'u> =
 [<JavaScript>]
 module Many =
 
-    type Operations(delete: unit -> unit, moveUp: unit -> unit, moveDown: unit -> unit) =
+    type Operations(delete: unit -> unit, moveUp: Submitter<unit>, moveDown: Submitter<unit>) =
         member this.Delete = ConcreteWriter.New delete :> Writer<_>
-        member this.MoveUp = ConcreteWriter.New moveUp :> Writer<_>
-        member this.MoveDown = ConcreteWriter.New moveDown :> Writer<_>
+        member this.MoveUp = moveUp
+        member this.MoveDown = moveDown
 
     type Renderer<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>, init: 'a) =
 
@@ -274,7 +279,20 @@ module Many =
                 let moveDown () =
                     moveUp (getThisIndex() + 1)
                 let moveUp () = moveUp (getThisIndex())
-                c.Add(piglet.view (f (Operations(delete, moveUp, moveDown))))
+                let canMoveUp () =
+                    if getThisIndex() > 0 then Success() else Failure []
+                let canMoveDown () =
+                    if getThisIndex() < streams.Length - 1 then Success() else Failure []
+                let inMoveUp = Stream(canMoveUp())
+                let inMoveDown = Stream(canMoveDown())
+                out.Subscribe(fun _ ->
+                    inMoveUp.Trigger(canMoveUp())
+                    inMoveDown.Trigger(canMoveDown()))
+                let subMoveUp = Submitter(inMoveUp)
+                let subMoveDown = Submitter(inMoveDown)
+                subMoveUp.Subscribe(Result.Iter moveUp)
+                subMoveDown.Subscribe(Result.Iter moveDown)
+                c.Add(piglet.view (f (Operations(delete, subMoveUp, subMoveDown))))
             match out.Latest with
             | Failure _ -> ()
             | Success xs -> Array.iter add xs

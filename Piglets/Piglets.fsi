@@ -77,8 +77,8 @@ module Many =
     [<Class>]
     type Operations =
         member Delete : Writer<unit>
-        member MoveUp : Writer<unit>
-        member MoveDown : Writer<unit>
+        member MoveUp : Submitter<unit>
+        member MoveDown : Submitter<unit>
 
     [<Class>]
     type Renderer<'a, 'v, 'w> =
