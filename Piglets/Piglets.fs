@@ -253,7 +253,7 @@ module Many =
                 | Success l, Success x -> Success (x :: l)
                 | Failure m , Success _
                 | Success _, Failure m -> Failure m
-                | Failure m1, Failure m2 -> Failure (m1 @ m2))
+                | Failure m1, Failure m2 -> Failure (m2 @ m1))
                 streams
                 (Success [])
             |> Result.Map Array.ofList

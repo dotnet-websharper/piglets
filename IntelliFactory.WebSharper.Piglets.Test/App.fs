@@ -26,12 +26,18 @@ module ViewModel =
     module V = Piglet.Validation
 
     [<JavaScript>]
+    let NotANumber x =
+        V.Is (fun s -> int s = 0) "I am not a number! I am a free man!" x
+
+    [<JavaScript>]
     let Name init =
         Piglet.Return (fun f l -> { firstName = f; lastName = l })
         <*> (Piglet.Yield init.firstName
-            |> V.Is V.NotEmpty "First name should not be empty.")
+            |> V.Is V.NotEmpty "First name should not be empty."
+            |> NotANumber)
         <*> (Piglet.Yield init.lastName
-            |> V.Is V.NotEmpty "Last name should not be empty.")
+            |> V.Is V.NotEmpty "Last name should not be empty."
+            |> NotANumber)
         |> Piglet.MapViewArgs (fun f l -> (f, l))
 
     [<JavaScript>]
@@ -39,13 +45,14 @@ module ViewModel =
         Piglet.Return (fun n a g c p f -> { name = n; age = a; gender = g; comments = c; participates = p; friends = f })
         <*> Name init.name
         <*> (Piglet.Yield init.age
-            |> Piglet.Validation.Is (fun a -> a >= 18) "You must be over 18.")
+            |> V.Is (fun a -> a >= 18) "You must be over 18.")
         <*> Piglet.Yield init.gender
         <*> Piglet.Yield init.comments
         <*> Piglet.Yield init.participates
         <*> Piglet.ManyInit init.friends "" (fun f ->
             Piglet.Yield f
-            |> Piglet.Validation.Is Piglet.Validation.NotEmpty "A friend with no name?")
+            |> V.Is V.NotEmpty "A friend with no name?"
+            |> NotANumber)
         |> Piglet.TransmitReader
         |> Piglet.WithSubmit
         |> Piglet.Run (fun u ->
@@ -74,11 +81,11 @@ module View =
             Div [] |> C.RenderMany friends (fun ops friend ->
                 Div [
                     C.Input friend
-                    C.Button ops.Delete -< [Attr.Value "Delete this friend"]
-                    C.ButtonValidate ops.MoveUp -< [Attr.Value "Move up"]
-                    C.ButtonValidate ops.MoveDown -< [Attr.Value "Move down"]
+                    C.Button ops.Delete -< [B [Text "Delete this friend"]]
+                    C.ButtonValidate ops.MoveUp -< [Text "Move up"]
+                    C.ButtonValidate ops.MoveDown -< [Text "Move down"]
                 ])
-            Div [C.Button friends.Add -< [Attr.Value "Add a friend"]]
+            Div [C.Button friends.Add -< [B [Text "Add a friend"]]]
             Table [
                 TBody [
                     TR [

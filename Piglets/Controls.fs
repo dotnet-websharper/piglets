@@ -191,7 +191,7 @@ let SubmitValidate (submit: Submitter<'a>) =
 
 [<JavaScript>]
 let Button (submit: Writer<unit>) =
-    Default.Input [Attr.Type "button"]
+    Button []
     |>! OnClick (fun _ _ -> submit.Trigger(Success()))
 
 [<JavaScript>]
