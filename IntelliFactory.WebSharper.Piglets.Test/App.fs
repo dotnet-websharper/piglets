@@ -75,10 +75,8 @@ module View =
                 Div [
                     C.Input friend
                     C.Button ops.Delete -< [Attr.Value "Delete this friend"]
-                    C.Button ops.MoveUp -< [Attr.Value "Move up"]
-                        |> C.EnableOnSuccess ops.MoveUp.Input
-                    C.Button ops.MoveDown -< [Attr.Value "Move down"]
-                        |> C.EnableOnSuccess ops.MoveDown.Input
+                    C.ButtonValidate ops.MoveUp -< [Attr.Value "Move up"]
+                    C.ButtonValidate ops.MoveDown -< [Attr.Value "Move down"]
                 ])
             Div [C.Button friends.Add -< [Attr.Value "Add a friend"]]
             Table [

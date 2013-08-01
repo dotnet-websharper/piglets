@@ -95,5 +95,13 @@ val Submit : Writer<unit> -> Element
 /// A button that triggers the given callback.
 val Button : Writer<unit> -> Element
 
+/// Displays a submit button driven by the given submitter.
+/// The button is disabled when no input is available.
+val SubmitValidate : Submitter<'a> -> Element
+
+/// A button that triggers the given callback.
+/// The button is disabled when no input is available.
+val ButtonValidate : Submitter<'a> -> Element
+
 /// Enables the element when reading Success, disable it when reading Failure.
 val EnableOnSuccess : Reader<'a> -> Element -> Element

@@ -1,5 +1,7 @@
 ﻿namespace IntelliFactory.WebSharper.Piglets
 
+open System
+
 type ErrorSourceId = int
 
 [<Sealed>]
@@ -18,8 +20,8 @@ type Result<'a> =
 [<AbstractClass>]
 type Reader<'a> =
     abstract member Latest : Result<'a>
-    abstract member Subscribe : (Result<'a> -> unit) -> unit
-    member SubscribeImmediate : (Result<'a> -> unit) -> unit
+    abstract member Subscribe : (Result<'a> -> unit) -> IDisposable
+    member SubscribeImmediate : (Result<'a> -> unit) -> IDisposable
     member Through : Reader<'b> -> Reader<'a>
 
 type ErrorMessage with
@@ -36,7 +38,7 @@ type Stream<'a> =
     interface Writer<'a>
     inherit Reader<'a>
     override Latest : Result<'a>
-    override Subscribe : (Result<'a> -> unit) -> unit
+    override Subscribe : (Result<'a> -> unit) -> IDisposable
     member Trigger : Result<'a> -> unit
 
 [<Sealed>]

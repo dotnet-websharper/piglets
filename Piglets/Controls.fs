@@ -21,6 +21,7 @@ let input ``type`` ofString toString (stream: Stream<'a>) =
             let s = toString x
             if i.Value <> s then i.Value <- s
         | Failure _ -> ())
+    |> ignore
     let ev (_: Dom.Event) = stream.Trigger(Success (ofString i.Value))
     i.Body.AddEventListener("keyup", ev, true)
     i.Body.AddEventListener("change", ev, true)
@@ -60,6 +61,7 @@ let TextArea (stream: Stream<string>) =
         | Success x ->
             if i.Value <> x then i.Value <- x
         | Failure _ -> ())
+    |> ignore
     let ev (_: Dom.Event) = stream.Trigger(Success i.Value)
     i.Body.AddEventListener("keyup", ev, true)
     i.Body.AddEventListener("change", ev, true)
@@ -76,6 +78,7 @@ let CheckBox (stream: Stream<bool>) =
         | Success x ->
             if i.Body?``checked`` <> x then i.Body?``checked`` <- x
         | Failure _ -> ())
+    |> ignore
     let ev (_: Dom.Event) = stream.Trigger(Success i.Body?``checked``)
     i.Body.AddEventListener("change", ev, true)
     i
@@ -103,7 +106,7 @@ let Radio (stream: Stream<'a>) (values: seq<'a * string>) =
                     input.Body?``checked`` <- x = v)
             | Failure _ -> ()
         set stream.Latest
-        stream.Subscribe set)
+        stream.Subscribe set |> ignore)
 
 [<JavaScript>]
 type HtmlContainer (container: Element) =
@@ -142,6 +145,7 @@ let ShowResult
         container.Clear()
         for e in render x do
             container.Append(e :> IPagelet))
+    |> ignore
     container
 
 [<JavaScript>]
@@ -169,21 +173,30 @@ let ShowErrors
     ShowResult reader render container
 
 [<JavaScript>]
+let EnableOnSuccess (reader: Reader<'a>) (element: Element) =
+    element
+    |>! OnAfterRender (fun el ->
+        el.Body?disabled <- not reader.Latest.isSuccess
+        reader.Subscribe(fun x -> el.Body?disabled <- not x.isSuccess)
+        |> ignore)
+
+[<JavaScript>]
 let Submit (submit: Writer<_>) =
     Default.Input [Attr.Type "submit"]
     |>! OnClick (fun _ _ -> (submit :> Writer<unit>).Trigger(Success()))
 
 [<JavaScript>]
-let EnableOnSuccess (reader: Reader<'a>) (element: Element) =
-    element
-    |>! OnAfterRender (fun el ->
-        el.Body?disabled <- not reader.Latest.isSuccess
-        reader.Subscribe(fun x -> el.Body?disabled <- not x.isSuccess))
+let SubmitValidate (submit: Submitter<'a>) =
+    Submit submit |> EnableOnSuccess submit.Input
 
 [<JavaScript>]
 let Button (submit: Writer<unit>) =
     Default.Input [Attr.Type "button"]
     |>! OnClick (fun _ _ -> submit.Trigger(Success()))
+
+[<JavaScript>]
+let ButtonValidate (submit: Submitter<'a>) =
+    Button submit |> EnableOnSuccess submit.Input
 
 [<JavaScript>]
 let Attr
@@ -198,7 +211,7 @@ let Attr
             | Failure _ -> ()
             | Success x -> element.SetAttribute(attrName, render x)
         set reader.Latest
-        reader.Subscribe set)
+        reader.Subscribe set |> ignore)
 
 [<JavaScript>]
 let AttrResult
@@ -210,7 +223,7 @@ let AttrResult
     |>! OnAfterRender (fun element ->
         let set x = element.SetAttribute(attrName, render x)
         set reader.Latest
-        reader.Subscribe set)
+        reader.Subscribe set |> ignore)
 
 [<JavaScript>]
 let Css
@@ -225,7 +238,7 @@ let Css
             | Failure _ -> ()
             | Success x -> element.SetCss(attrName, render x)
         set reader.Latest
-        reader.Subscribe set)
+        reader.Subscribe set |> ignore)
 
 [<JavaScript>]
 let CssResult
@@ -237,4 +250,4 @@ let CssResult
     |>! OnAfterRender (fun element ->
         let set x = element.SetCss(attrName, render x)
         set reader.Latest
-        reader.Subscribe set)
+        reader.Subscribe set |> ignore)

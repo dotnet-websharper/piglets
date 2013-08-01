@@ -1,5 +1,6 @@
 ﻿namespace IntelliFactory.WebSharper.Piglets
 
+open System
 open IntelliFactory.WebSharper
 
 module Id =
@@ -62,7 +63,7 @@ type Result<'a> =
 [<AbstractClass>]
 type Reader<'a> [<JavaScript>] (id) =
     abstract member Latest : Result<'a>
-    abstract member Subscribe : (Result<'a> -> unit) -> unit
+    abstract member Subscribe : (Result<'a> -> unit) -> IDisposable
 
     [<JavaScript>]
     member this.SubscribeImmediate f =
@@ -82,6 +83,7 @@ type Reader<'a> [<JavaScript>] (id) =
                 | _, [] -> out.Trigger this.Latest
                 | Success x, l -> out.Trigger (Failure l)
                 | Failure l, l' -> out.Trigger (Failure (l @ l')))
+        |> ignore
         out :> Reader<'a>
 
 and [<Interface>] Writer<'a> =
@@ -97,7 +99,7 @@ and [<Sealed>] Stream<'a> [<JavaScript>] (init: Result<'a>, ?id) =
 
     [<JavaScript>]
     override this.Subscribe f =
-        s.Add f
+        s.Subscribe f
 
     [<JavaScript>]
     member this.Trigger x =
@@ -172,15 +174,15 @@ module private Stream =
     [<JavaScript>]
     let Ap (sf: Stream<'a -> 'b>) (sx: Stream<'a>) : Stream<'b> =
         let out = Stream(Result.Ap(sf.Latest, sx.Latest))
-        sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, sx.Latest)))
-        sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, x)))
+        sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, sx.Latest))) |> ignore
+        sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, x))) |> ignore
         out
 
     [<JavaScript>]
     let ApJoin (sf: Stream<'a -> 'b>) (sx: Stream<Result<'a>>) : Stream<'b> =
         let out = Stream(Result.Ap(sf.Latest, Result.Join sx.Latest))
-        sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, Result.Join sx.Latest)))
-        sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, Result.Join x)))
+        sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, Result.Join sx.Latest))) |> ignore
+        sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, Result.Join x))) |> ignore
         out
 
 type Piglet<'a, 'v> =
@@ -261,14 +263,9 @@ module Many =
             let add x =
                 let piglet = p x
                 push streams piglet.stream
-                piglet.stream.SubscribeImmediate (fun _ -> update())
+                piglet.stream.SubscribeImmediate (fun _ -> update()) |> ignore
                 let getThisIndex() =
                     streams |> Seq.findIndex (fun x -> x.Id = piglet.stream.Id)
-                let delete () =
-                    let i = getThisIndex()
-                    splice streams i 1 [||] |> ignore
-                    c.Remove i
-                    update()
                 let moveUp i =
                     if i > 0 && i < streams.Length then
                         let s = streams.[i]
@@ -285,13 +282,24 @@ module Many =
                     if getThisIndex() < streams.Length - 1 then Success() else Failure []
                 let inMoveUp = Stream(canMoveUp())
                 let inMoveDown = Stream(canMoveDown())
-                out.Subscribe(fun _ ->
-                    inMoveUp.Trigger(canMoveUp())
-                    inMoveDown.Trigger(canMoveDown()))
+                let outSubscription =
+                    out.Subscribe(fun _ ->
+                        inMoveUp.Trigger(canMoveUp())
+                        inMoveDown.Trigger(canMoveDown()))
                 let subMoveUp = Submitter(inMoveUp)
                 let subMoveDown = Submitter(inMoveDown)
-                subMoveUp.Subscribe(Result.Iter moveUp)
-                subMoveDown.Subscribe(Result.Iter moveDown)
+                let subUpSubscription =
+                    subMoveUp.Subscribe(Result.Iter moveUp)
+                let subDownSubscription =
+                    subMoveDown.Subscribe(Result.Iter moveDown)
+                let delete () =
+                    let i = getThisIndex()
+                    splice streams i 1 [||] |> ignore
+                    c.Remove i
+                    outSubscription.Dispose()
+                    subUpSubscription.Dispose()
+                    subDownSubscription.Dispose()
+                    update()
                 c.Add(piglet.view (f (Operations(delete, subMoveUp, subMoveDown))))
             match out.Latest with
             | Failure _ -> ()
@@ -299,6 +307,7 @@ module Many =
             addTrigger.Subscribe(function
                 | Failure _ -> ()
                 | Success () -> add init)
+            |> ignore
             c.Container
 
         member this.Add = addTrigger :> Writer<unit>
@@ -367,7 +376,7 @@ module Piglet =
     [<JavaScript>]
     let MapResult m f =
         let out = Stream(m f.stream.Latest)
-        f.stream.Subscribe(out.Trigger << m)
+        f.stream.Subscribe(out.Trigger << m) |> ignore
         {
             stream = out
             view = f.view
@@ -393,6 +402,7 @@ module Piglet =
                 let! res = m v
                 return out.Trigger res
             } |> Async.Start)
+        |> ignore
         async {
             let! res = m f.stream.Latest
             return out.Trigger res
@@ -424,6 +434,7 @@ module Piglet =
         f.stream.Subscribe(function
             | Success x -> action x
             | Failure _ -> ())
+        |> ignore
         f
 
     [<JavaScript>]
@@ -448,6 +459,7 @@ module Piglet =
                 | Failure m -> s'.Trigger (Failure m)
                 | Success x when pred x -> s'.Trigger (Success x)
                 | _ -> s'.Trigger (Failure [msg]))
+            |> ignore
             { f with
                 stream = s'
             }
@@ -459,6 +471,7 @@ module Piglet =
                 | Failure m -> s'.Trigger (Failure m)
                 | Success x when pred x -> s'.Trigger (Success x)
                 | _ -> s'.Trigger (Failure [ErrorMessage(msg, s'.Id)]))
+            |> ignore
             { f with
                 stream = s'
             }
