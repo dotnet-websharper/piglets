@@ -10,7 +10,7 @@ module Model =
     type Gender = Male | Female
 
     type User =
-        { name: Name; age: int; gender: Gender; comments: string; participates: bool; friends: string[] }
+        { name: Name; age: int; gender: Gender; comments: string; participates: bool; friends: Name[] }
 
         [<JavaScript>]
         static member Pretty u =
@@ -49,10 +49,7 @@ module ViewModel =
         <*> Piglet.Yield init.gender
         <*> Piglet.Yield init.comments
         <*> Piglet.Yield init.participates
-        <*> Piglet.ManyInit init.friends "" (fun f ->
-            Piglet.Yield f
-            |> V.Is V.NotEmpty "A friend with no name?"
-            |> NotANumber)
+        <*> Piglet.ManyInit init.friends { firstName = ""; lastName = "" } Name
         |> Piglet.TransmitReader
         |> Piglet.WithSubmit
         |> Piglet.Run (fun u ->
@@ -71,25 +68,29 @@ module View =
 
     [<JavaScript>]
     let User (firstName, lastName) age gender comments participates (friends: Many.Renderer<_,_,_>) liveUser submit =
+        let nameInput s =
+            C.Input s |> RedBgOnError (s.Through liveUser)
         Div [
-            Div [C.Input firstName |> RedBgOnError firstName |> C.WithLabel "First name:"]
-            Div [C.Input lastName |> RedBgOnError lastName |> C.WithLabel "Last name:"]
+            Div [nameInput firstName |> C.WithLabel "First name:"]
+            Div [nameInput lastName |> C.WithLabel "Last name:"]
             Div [C.Radio gender [Male, "Male"; Female, "Female"]]
-            Div [C.IntInput age |> RedBgOnError age |> C.WithLabel "Age:"]
+            Div [C.IntInput age |> RedBgOnError (age.Through liveUser) |> C.WithLabel "Age:"]
             Div [C.CheckBox participates |> C.WithLabel "Participate in the survey"]
             Div [C.TextArea comments |> C.WithLabel "Comments:"]
-            Div [] |> C.RenderMany friends (fun ops friend ->
+            Div [] |> C.RenderMany friends (fun ops (first, last) ->
                 Div [
-                    C.Input friend
+                    nameInput first
+                    nameInput last
                     C.Button ops.Delete -< [B [Text "Delete this friend"]]
                     C.ButtonValidate ops.MoveUp -< [Text "Move up"]
                     C.ButtonValidate ops.MoveDown -< [Text "Move down"]
                 ])
+                |> C.WithLabel "Friends:"
             Div [C.Button friends.Add -< [B [Text "Add a friend"]]]
             Table [
                 TBody [
                     TR [
-                        TH [Attr.ColSpan "6"] -< [Text "Summary"]
+                        TH [Attr.ColSpan "7"] -< [Text "Summary"]
                     ]
                     TR [
                         TH [Text "First name"]
@@ -117,7 +118,9 @@ module View =
                         TD [] |> C.Show liveUser (function
                             | {comments = ""} -> [I [Text "(no comment)"]]
                             | {comments = c} -> [Span [Text c]])
-                        TD [] |> C.ShowString friends.Output (String.concat ", ")
+                        TD [] |> C.ShowString friends.Output
+                            (Seq.map (fun n -> n.firstName + " " + n.lastName)
+                            >> String.concat ", ")
                     ]
                 ]
             ]
@@ -146,7 +149,11 @@ let UI() =
             gender = Model.Male
             comments = "Blah blah blah"
             participates = true
-            friends = [|"Ernesto"; "Loic"|]
+            friends =
+                [|
+                    { firstName = "Ernesto"; lastName = "Rodriguez" }
+                    { firstName = "Loic"; lastName = "Denuziere" }
+                |]
         }
     ViewModel.User initUser
-    |> Piglet.Render View.User 
+    |> Piglet.Render View.User
