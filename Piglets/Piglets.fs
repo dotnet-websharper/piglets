@@ -431,9 +431,7 @@ module Piglet =
 
     [<JavaScript>]
     let Run action f =
-        f.stream.Subscribe(function
-            | Success x -> action x
-            | Failure _ -> ())
+        f.stream.Subscribe action
         |> ignore
         f
 

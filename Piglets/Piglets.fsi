@@ -137,7 +137,7 @@ module Piglet =
     val MapResult : (Result<'a> -> Result<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
 
     /// Run the action every time the Piglet's stream receives data.
-    val Run : action: ('a -> unit) -> Piglet<'a, 'b> -> Piglet<'a, 'b>
+    val Run : action: (Result<'a> -> unit) -> Piglet<'a, 'b> -> Piglet<'a, 'b>
 
     /// Run a Piglet UI with the given view.
     val Render : 'v -> Piglet<'a, 'v -> 'elt> -> 'elt
