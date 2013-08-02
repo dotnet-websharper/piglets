@@ -430,10 +430,14 @@ module Piglet =
                 })
 
     [<JavaScript>]
-    let Run action f =
-        f.stream.Subscribe action
+    let RunResult action p =
+        p.stream.Subscribe action
         |> ignore
-        f
+        p
+
+    [<JavaScript>]
+    let Run action p =
+        RunResult (Result.Iter action) p
 
     [<JavaScript>]
     let Render view f =

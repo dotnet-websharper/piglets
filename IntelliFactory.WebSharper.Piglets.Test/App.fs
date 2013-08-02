@@ -52,9 +52,8 @@ module ViewModel =
         <*> Piglet.ManyInit init.friends { firstName = ""; lastName = "" } Name
         |> Piglet.TransmitReader
         |> Piglet.WithSubmit
-        |> Piglet.Run (function
-            | Failure _ -> ()
-            | Success u -> JavaScript.Alert (Model.User.Pretty u))
+        |> Piglet.Run (fun u ->
+            JavaScript.Alert (Model.User.Pretty u))
 
 module View =
 
