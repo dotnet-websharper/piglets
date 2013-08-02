@@ -83,7 +83,7 @@ module Many =
         member MoveDown : Submitter<unit>
 
     [<Class>]
-    type Renderer<'a, 'v, 'w> =
+    type Stream<'a, 'v, 'w> =
         inherit Reader<'a[]>
     
         member Render : Container<'w, 'u> -> (Operations -> 'v) -> 'u
@@ -99,10 +99,10 @@ module Piglet =
     val Return : 'a -> Piglet<'a, 'b -> 'b>
 
     /// Create a Piglet that returns many values, each created according to the given Piglet.
-    val Many : 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Renderer<'a, 'v, 'w> -> 'x) -> 'x>
+    val Many : 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x>
 
     /// Create a Piglet that returns many values, each created according to the given Piglet.
-    val ManyInit : 'a[] -> 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Renderer<'a, 'v, 'w> -> 'x) -> 'x>
+    val ManyInit : 'a[] -> 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x>
 
     /// Create a Piglet value that streams the value every time it receives a signal.
     /// The signaling function is passed to the view.

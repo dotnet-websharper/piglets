@@ -241,7 +241,7 @@ module Many =
         member this.MoveUp = moveUp
         member this.MoveDown = moveDown
 
-    type Renderer<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>, init: 'a) =
+    type Stream<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>, init: 'a) =
 
         inherit Reader<'a[]>(out.Id)
 
@@ -286,8 +286,8 @@ module Many =
                     if getThisIndex() > 0 then Success() else Failure []
                 let canMoveDown () =
                     if getThisIndex() < streams.Length - 1 then Success() else Failure []
-                let inMoveUp = Stream(canMoveUp())
-                let inMoveDown = Stream(canMoveDown())
+                let inMoveUp = Stream<_>(canMoveUp())
+                let inMoveDown = Stream<_>(canMoveDown())
                 let outSubscription =
                     out.Subscribe(fun _ ->
                         inMoveUp.Trigger(canMoveUp())
@@ -336,9 +336,9 @@ module Piglet =
         }
 
     [<JavaScript>]
-    let ManyInit (inits: 'a[]) (init: 'a) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.Renderer<'a, 'v, 'w> -> 'x) -> 'x> =
+    let ManyInit (inits: 'a[]) (init: 'a) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x> =
         let s = Stream(Success inits)
-        let m = Many.Renderer<'a, 'v, 'w>(p, s, init)
+        let m = Many.Stream<'a, 'v, 'w>(p, s, init)
         {
             stream = s
             view = fun f -> f m
