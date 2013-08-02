@@ -84,12 +84,11 @@ module Many =
 
     [<Class>]
     type Renderer<'a, 'v, 'w> =
+        inherit Reader<'a[]>
     
         member Render : Container<'w, 'u> -> (Operations -> 'v) -> 'u
 
         member Add : Writer<unit>
-
-        member Output : Reader<'a[]>
 
 module Piglet =
 

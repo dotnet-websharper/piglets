@@ -243,6 +243,8 @@ module Many =
 
     type Renderer<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>, init: 'a) =
 
+        inherit Reader<'a[]>(out.Id)
+
         let addTrigger = Stream<unit>(Failure [])
 
         let streams : Stream<'a>[] = [||]
@@ -258,6 +260,10 @@ module Many =
                 (Success [])
             |> Result.Map Array.ofList
             |> out.Trigger
+
+        override this.Subscribe f = out.Subscribe f
+
+        override this.Latest = out.Latest
 
         member this.Render (c: Container<'w, 'u>) (f : Operations -> 'v) : 'u =
             let add x =
@@ -311,8 +317,6 @@ module Many =
             c.Container
 
         member this.Add = addTrigger :> Writer<unit>
-
-        member this.Output = out :> Reader<_>
 
 module Piglet =
 

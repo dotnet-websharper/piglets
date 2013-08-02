@@ -120,7 +120,7 @@ module View =
                             TD [] |> C.Show liveUser (function
                                 | {comments = ""} -> [I [Text "(no comment)"]]
                                 | {comments = c} -> [Span [Text c]])
-                            TD [] |> C.ShowString friends.Output
+                            TD [] |> C.ShowString friends
                                 (Seq.map (fun n -> n.firstName + " " + n.lastName)
                                 >> String.concat ", ")
                         ]
