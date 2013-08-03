@@ -192,16 +192,10 @@ type Piglet<'a, 'v> =
     }
 
     [<JavaScript>]
-    member this.Stream = this.stream
+    member this.Stream = this.stream                
 
 [<AutoOpen>]
 module Pervasives =
-
-    [<Inline "$arr.push($x)">]
-    let push (arr: 'T []) (x: 'T) = ()
-
-    [<Direct "Array.prototype.splice.apply($arr, [$index, $howMany].concat($items))">]
-    let splice (arr: 'T []) (index: int) (howMany: int) (items: 'T[]) : 'T [] = items
 
     /// Push an argument to the view function.
     [<JavaScript>]
@@ -247,18 +241,18 @@ module Many =
 
         let addTrigger = Stream<unit>(Failure [])
 
-        let streams : Stream<'a>[] = [||]
+        let streams = ResizeArray<Stream<'a>>()
 
         let update() =
-            Array.foldBack (fun (cur: Stream<'a>) acc ->
+            Seq.fold (fun acc (cur: Stream<'a>) ->
                 match acc, cur.Latest with
                 | Success l, Success x -> Success (x :: l)
                 | Failure m , Success _
                 | Success _, Failure m -> Failure m
                 | Failure m1, Failure m2 -> Failure (m2 @ m1))
-                streams
                 (Success [])
-            |> Result.Map Array.ofList
+                streams
+            |> Result.Map (List.rev >> Array.ofList)
             |> out.Trigger
 
         override this.Subscribe f = out.Subscribe f
@@ -268,12 +262,12 @@ module Many =
         member this.Render (c: Container<'w, 'u>) (f : Operations -> 'v) : 'u =
             let add x =
                 let piglet = p x
-                push streams piglet.stream
+                streams.Add piglet.stream
                 piglet.stream.SubscribeImmediate (fun _ -> update()) |> ignore
                 let getThisIndex() =
                     streams |> Seq.findIndex (fun x -> x.Id = piglet.stream.Id)
                 let moveUp i =
-                    if i > 0 && i < streams.Length then
+                    if i > 0 && i < streams.Count then
                         let s = streams.[i]
                         streams.[i] <- streams.[i-1]
                         streams.[i-1] <- s
@@ -285,7 +279,7 @@ module Many =
                 let canMoveUp () =
                     if getThisIndex() > 0 then Success() else Failure []
                 let canMoveDown () =
-                    if getThisIndex() < streams.Length - 1 then Success() else Failure []
+                    if getThisIndex() < streams.Count - 1 then Success() else Failure []
                 let inMoveUp = Stream<_>(canMoveUp())
                 let inMoveDown = Stream<_>(canMoveDown())
                 let outSubscription =
@@ -300,7 +294,7 @@ module Many =
                     subMoveDown.Subscribe(Result.Iter moveDown)
                 let delete () =
                     let i = getThisIndex()
-                    splice streams i 1 [||] |> ignore
+                    streams.RemoveAt i
                     c.Remove i
                     outSubscription.Dispose()
                     subUpSubscription.Dispose()
