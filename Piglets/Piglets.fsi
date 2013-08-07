@@ -88,6 +88,14 @@ module Many =
     
         member Render : Container<'w, 'u> -> (Operations -> 'v) -> 'u
 
+        member Add : Writer<'a>
+
+        member SubscribeAdderPiglet : Piglet<'a,'w> -> Piglet<'a,'w>
+
+    [<Class>]
+    type UnitStream<'a, 'v, 'w> =
+        inherit Stream<'a,'v,'w>
+
         member Add : Writer<unit>
 
 module Piglet =
@@ -98,11 +106,14 @@ module Piglet =
     /// Create a Piglet initialized with x that doesn't pass any stream to the view.
     val Return : 'a -> Piglet<'a, 'b -> 'b>
 
-    /// Create a Piglet that returns many values, each created according to the given Piglet.
-    val Many : 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x>
+    ///Piglet that returns many values with an additional piglet used to create new values in the collection
+    val ManyPiglet : 'a[] -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x>
 
     /// Create a Piglet that returns many values, each created according to the given Piglet.
-    val ManyInit : 'a[] -> 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x>
+    val Many : 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.UnitStream<'a, 'v, 'w> -> 'x) -> 'x>
+
+    /// Create a Piglet that returns many values, each created according to the given Piglet.
+    val ManyInit : 'a[] -> 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.UnitStream<'a, 'v, 'w> -> 'x) -> 'x>
 
     /// Create a Piglet value that streams the value every time it receives a signal.
     /// The signaling function is passed to the view.

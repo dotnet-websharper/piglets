@@ -241,11 +241,19 @@ module Many =
         member this.MoveUp = moveUp
         member this.MoveDown = moveDown
 
-    type Stream<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>, init: 'a) =
+    [<JavaScript>]
+    let WithSubmit fin =
+        let submitter = Submitter(fin.stream)
+        {
+            stream = submitter.Output
+            view = fin.view <<^ submitter
+        }
+
+    type Stream<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>) =
 
         inherit Reader<'a[]>(out.Id)
 
-        let addTrigger = Stream<unit>(Failure [])
+        let addStream = Stream<_>(Failure [])
 
         let streams : Stream<'a>[] = [||]
 
@@ -310,13 +318,38 @@ module Many =
             match out.Latest with
             | Failure _ -> ()
             | Success xs -> Array.iter add xs
-            addTrigger.Subscribe(function
+            addStream.Subscribe(function
                 | Failure _ -> ()
-                | Success () -> add init)
+                | Success init -> add init)
             |> ignore
             c.Container
 
-        member this.Add = addTrigger :> Writer<unit>
+        member this.Add = addStream :> Writer<'a>
+
+        member this.SubscribeAdderPiglet (p : Piglet<'a,'w>) = 
+            
+            p.stream.Subscribe(
+                function Success v -> Success v |> addStream.Trigger
+                        | Failure _ -> ()
+            ) |> ignore
+            p
+
+    type UnitStream<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>, init: Piglet<'a,'v-> 'w>,``default`` : 'a) =
+        
+        inherit Stream<'a,'v,'w>(p,out)
+
+        let submitStream = 
+            let submitter = Stream<_>(Failure [])
+            let trigger = init.Stream.Trigger
+            
+            submitter.Subscribe(
+                        function Failure msgs -> Failure msgs |> trigger
+                                | Success () -> Success ``default``  |> trigger
+                    ) |> ignore
+
+            submitter
+
+        member this.Add = submitStream :> Writer<unit>
 
 module Piglet =
 
@@ -336,9 +369,28 @@ module Piglet =
         }
 
     [<JavaScript>]
-    let ManyInit (inits: 'a[]) (init: 'a) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x> =
+    let WithSubmit fin =
+        let submitter = Submitter(fin.stream)
+        {
+            stream = submitter.Output
+            view = fin.view <<^ submitter
+        }
+
+    [<JavaScript>]
+    let ManyPiglet (inits : 'a[]) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x> =
+        let s = Stream (Success inits)
+        let m = Many.Stream<'a,'v,'w>(p,s)
+        {
+            stream = s
+            view = fun f -> f m
+        }
+
+    [<JavaScript>]
+    let ManyInit (inits: 'a[]) (init: 'a) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.UnitStream<'a, 'v, 'w> -> 'x) -> 'x> =
         let s = Stream(Success inits)
-        let m = Many.Stream<'a, 'v, 'w>(p, s, init)
+        let _init = p init
+
+        let m = Many.UnitStream<'a, 'v, 'w>(p, s,_init,init)
         {
             stream = s
             view = fun f -> f m
@@ -347,14 +399,6 @@ module Piglet =
     [<JavaScript>]
     let Many init p =
         ManyInit [|init|] init p
-
-    [<JavaScript>]
-    let WithSubmit fin =
-        let submitter = Submitter(fin.stream)
-        {
-            stream = submitter.Output
-            view = fin.view <<^ submitter
-        }
 
     [<JavaScript>]
     let TransmitStream f =
