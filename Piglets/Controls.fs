@@ -128,7 +128,7 @@ type HtmlContainer (container: Element) =
         member this.Container = container
 
 [<JavaScript>]
-let RenderMany (many: Many.Stream<_,_,_>) renderOne container =
+let RenderMany (many: Many.UnitStream<_,_,_>) renderOne container =
     many.Render (HtmlContainer container) renderOne
 
 [<JavaScript>]

@@ -29,7 +29,7 @@ val Radio<'a when 'a : equality> : Stream<'a> -> seq<'a * string> -> Element
 
 /// Render a multiple-valued stream.
 val RenderMany :
-    stream: Many.Stream<'a, 'v, Element> ->
+    stream: Many.UnitStream<'a, 'v, Element> ->
     renderOne: (Many.Operations -> 'v) ->
     container: Element ->
     Element

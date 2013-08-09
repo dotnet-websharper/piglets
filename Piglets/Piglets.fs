@@ -249,7 +249,7 @@ module Many =
             view = fin.view <<^ submitter
         }
 
-    type Stream<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>) =
+    type Stream<'a, 'v, 'w, 'y,'z>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>,adder : Piglet<'a,'y -> 'z>) =
 
         inherit Reader<'a[]>(out.Id)
 
@@ -268,6 +268,13 @@ module Many =
                 (Success [])
             |> Result.Map Array.ofList
             |> out.Trigger
+
+        do
+            adder.stream.Subscribe(
+                function Success v -> Success v |> addStream.Trigger
+                        | Failure _ -> ()
+            ) |> ignore
+
 
         override this.Subscribe f = out.Subscribe f
 
@@ -326,17 +333,11 @@ module Many =
 
         member this.Add = addStream :> Writer<'a>
 
-        member this.SubscribeAdderPiglet (p : Piglet<'a,'w>) = 
-            
-            p.stream.Subscribe(
-                function Success v -> Success v |> addStream.Trigger
-                        | Failure _ -> ()
-            ) |> ignore
-            p
+        member this.AddRender f = adder.view f
 
     type UnitStream<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>, init: Piglet<'a,'v-> 'w>,``default`` : 'a) =
         
-        inherit Stream<'a,'v,'w>(p,out)
+        inherit Stream<'a,'v,'w,'v,'w>(p,out,init)
 
         let submitStream = 
             let submitter = Stream<_>(Failure [])
@@ -377,9 +378,9 @@ module Piglet =
         }
 
     [<JavaScript>]
-    let ManyPiglet (inits : 'a[]) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x> =
+    let ManyPiglet (inits : 'a[]) (create : Piglet<'a,'y->'z>) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.Stream<'a, 'v, 'w,'y,'z> -> 'x) -> 'x> =
         let s = Stream (Success inits)
-        let m = Many.Stream<'a,'v,'w>(p,s)
+        let m = Many.Stream<'a,'v,'w,'y,'z>(p,s,create)
         {
             stream = s
             view = fun f -> f m

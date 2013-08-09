@@ -83,19 +83,23 @@ module Many =
         member MoveDown : Submitter<unit>
 
     [<Class>]
-    type Stream<'a, 'v, 'w> =
+    type Stream<'a, 'v, 'w,'y,'z> =
         inherit Reader<'a[]>
     
+        ///Render the element collection inside this Piglet inside the given container and with the provided rendering function
         member Render : Container<'w, 'u> -> (Operations -> 'v) -> 'u
 
+        ///Stream where new elements for the collection are written
         member Add : Writer<'a>
 
-        member SubscribeAdderPiglet : Piglet<'a,'w> -> Piglet<'a,'w>
+        ///Function that provides the Adder Piglet with a rendering function
+        member AddRender : 'y -> 'z
 
     [<Class>]
     type UnitStream<'a, 'v, 'w> =
-        inherit Stream<'a,'v,'w>
+        inherit Stream<'a,'v,'w,'v,'w>
 
+        ///Add an element to the collection set to the default values
         member Add : Writer<unit>
 
 module Piglet =
@@ -107,7 +111,7 @@ module Piglet =
     val Return : 'a -> Piglet<'a, 'b -> 'b>
 
     ///Piglet that returns many values with an additional piglet used to create new values in the collection
-    val ManyPiglet : 'a[] -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Stream<'a, 'v, 'w> -> 'x) -> 'x>
+    val ManyPiglet : 'a[] -> (Piglet<'a,'y->'z>) -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Stream<'a, 'v, 'w,'y,'z> -> 'x) -> 'x>
 
     /// Create a Piglet that returns many values, each created according to the given Piglet.
     val Many : 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.UnitStream<'a, 'v, 'w> -> 'x) -> 'x>
