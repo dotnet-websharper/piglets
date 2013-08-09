@@ -57,8 +57,6 @@ type Piglet<'a, 'v> =
 [<AutoOpen>]
 module Pervasives =
 
-    val private push : 'a[] -> 'a -> unit
-    val private splice : 'a[] -> int -> int -> 'a[] -> 'a[]
     val private (<<^) : ('a -> 'b -> 'c) -> 'b -> ('a -> 'c)
     val private (>>^) : ('a -> 'b) -> 'a -> ('b -> 'c) -> 'c
 
@@ -139,7 +137,7 @@ module Piglet =
     val MapToResult : ('a -> Result<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
 
     /// Map the Result of a Piglet, without changing its view.
-    val MapAsyncResult : (Result<'a> -> Async<Result<'b>>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+    val MapResult : (Result<'a> -> Result<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
 
     /// Map the value of a Piglet, without changing its view.
     val MapAsync : ('a -> Async<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
@@ -148,7 +146,7 @@ module Piglet =
     val MapToAsyncResult : ('a -> Async<Result<'b>>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
 
     /// Map the Result of a Piglet, without changing its view.
-    val MapResult : (Result<'a> -> Result<'b>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+    val MapAsyncResult : (Result<'a> -> Async<Result<'b>>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
 
     /// Run the action every time the Piglet's stream receives successful data.
     val Run : action: ('a -> unit) -> Piglet<'a, 'b> -> Piglet<'a, 'b>
