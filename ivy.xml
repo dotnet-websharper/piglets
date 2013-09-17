@@ -2,6 +2,6 @@
   <info organisation="IntelliFactory" module="websharper.piglets" revision="2.5" />
   <dependencies>
     <dependency name="build" rev="latest.integration" />
-    <dependency name="websharper-security" rev="latest.integration" />
+    <dependency name="websharper" rev="latest.integration" />
   </dependencies>
 </ivy-module>
