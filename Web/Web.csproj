@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
@@ -64,16 +64,6 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\IntelliFactory.WebSharper.Piglets.Test\IntelliFactory.WebSharper.Piglets.Test.fsproj">
-      <Project>{87297620-c340-470f-a347-21dfa030c502}</Project>
-      <Name>IntelliFactory.WebSharper.Piglets.Test</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Piglets\IntelliFactory.WebSharper.Piglets.fsproj">
-      <Project>{ab53bb7f-fbe4-4f4d-a817-7a7f20f2b06f}</Project>
-      <Name>IntelliFactory.WebSharper.Piglets</Name>
-    </ProjectReference>
-  </ItemGroup>
   <ItemGroup />
   <ItemGroup>
     <None Include="Web.Debug.config">
@@ -87,7 +77,6 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VisualStudioVersion)' != '10.0'AND Exists('$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets')" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VisualStudioVersion)' == '10.0'" />
-  <Import Project="..\.build\lib\IntelliFactory.WebSharper.Web.targets" />
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">

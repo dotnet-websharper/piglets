@@ -1,9 +1,10 @@
-bin
-obj
-.*\.suo
-.*\.user
-Web/Scripts
-.build
+\.suo$
+\.user$
+^build/
 ^packages/
 ^tools/packages/
 ^build/
+^Web/Content/
+^Web/Scripts/
+^Web/bin/
+^Web/obj/
