@@ -18,6 +18,6 @@ similar to Formlets but with more control over the structure of the output.
 [fpish]: http://fpish.net
 [fsharp]: http://fsharp.org
 [gh]: http://github.com/intellifactory/websharper.piglets
-[issues]: http://bitbucket.org/IntelliFactory/websharper.piglets/issues
+[issues]: http://github.com/intellifactory/websharper.piglets/issues
 [license]: http://github.com/intellifactory/websharper.piglets/blob/master/LICENSE.md
 [nuget]: http://nuget.org
