@@ -96,7 +96,7 @@ type Species =
     | Cat | Dog | Piglet
 
     [<JavaScript>]
-    override this.String =
+    override this.ToString() =
         match this with
         | Cat -> "cat"
         | Dog -> "dog"
@@ -345,7 +345,7 @@ a function from the `Piglet.Many*` family:
 
 ```
 let PersonPiglet (init: Person) =
-    Piglet.Return (fun first last pets =
+    Piglet.Return (fun first last pets ->
         { firstName = first; lastName = last; pets = pets })
     <*> (Piglet.Yield init.firstName
         |> Validation.Is Validation.NotEmpty "Please enter your first name.")
@@ -434,9 +434,17 @@ Here is now the complete example, showcasing all the elements described
 in this tutorial.
 
 ```
-type Species = | Cat | Dog | Piglet
+type Species =
+    | Cat | Dog | Piglet
+    [<JavaScript>]
+    override this.ToString() =
+        match this with
+        | Cat -> "cat"
+        | Dog -> "dog"
+        | Piglet -> "piglet"
+
 type Pet = { species: Species; name: string }
-type Person = { first: string; last: string; pets: Pet[] }
+type Person = { firstName: string; lastName: string; pets: Pet[] }
 
 let PetPiglet (init: Pet) =
     Piglet.Return (fun s n -> { species = s; name = n })
@@ -445,7 +453,7 @@ let PetPiglet (init: Pet) =
         |> Validation.Is Validation.NotEmpty "Please enter the pet's name.")
 
 let PersonPiglet (init: Person) =
-    Piglet.Return (fun first last pets =
+    Piglet.Return (fun first last pets ->
         { firstName = first; lastName = last; pets = pets })
     <*> (Piglet.Yield init.firstName
         |> Validation.Is Validation.NotEmpty "Please enter your first name.")
@@ -466,7 +474,7 @@ let RenderPet species name =
         Controls.Input name
     ]
 
-let RenderPerson firstName lastName pets =
+let RenderPerson firstName lastName pets submit =
     Div [
         Div [
             Controls.Input firstName
