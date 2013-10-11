@@ -91,7 +91,7 @@ Let's create a piglet to input information about a pet. We will need
 the species and the name of the pet. First, let's define the
 corresponding types:
 
-```
+```fsharp
 type Species =
     | Cat | Dog | Piglet
 
@@ -107,7 +107,7 @@ type Pet = { species : Species; name : string }
 
 Then, let's define the Piglet itself:
 
-```
+```fsharp
 let PetPiglet (init: Pet) =
     Piglet.Return (fun s n -> { species = s; name = n })
     <*> Piglet.Yield init.species
@@ -128,7 +128,7 @@ The types of `Piglet.Return`, `<*>` and `Piglet.Yield` are more
 complex than their Formlet counterparts, since they also deal with
 composing the view builder.
 
-```
+```fsharp
 val Return : 'a -> Piglet<'a, ('b -> 'b)>
 
 val Yield : 'a -> Piglet<'a, (Stream<'a> -> 'b) -> 'b>
@@ -151,7 +151,7 @@ the corresponding form.
 
 The Piglet we defined has the following type:
 
-```
+```fsharp
 val PetPiglet : Pet ->
                 Piglet<Pet,
                        (Stream<Species> ->
@@ -165,7 +165,7 @@ previously; but what is this `Stream<_>` type? To put it simply, it
 represents a value that can change over time. It is what we will use
 to communicate with the input fields. Rendering is defined as follows:
 
-```
+```fsharp
 let RenderPet species name =
     Div [
         Controls.Radio species [
@@ -189,14 +189,14 @@ functions only render the needed input elements, allowing you to style
 them as you want. You can even add attributes directly to the input
 element:
 
-```
+```fsharp
 Controls.Input name -< [Attr.Class "pet-name"]
 ```
 
 In order to use `RenderPet` to render the previously defined piglet,
 we use the function `Piglet.Render`:
 
-```
+```fsharp
 let PetForm =
     PetPiglet { species = Cat; name = "Fluffy" }
     |> Piglet.Render RenderPet
@@ -211,7 +211,7 @@ Note that right now, we are not doing anything with this resulting
 `Pet`. The simplest way to do so is using `Piglet.Run`, which calls a
 function every time the value is changed.
 
-```
+```fsharp
 let PetForm =
     PetPiglet { species = Cat; name = "Fluffy" }
     |> Piglet.Run (fun animal ->
@@ -229,7 +229,7 @@ The above Piglet is not very user friendly: it triggers (and shows an
 alert window) every time the user inputs a character. Let's fix this
 by adding a submit button.
 
-```
+```fsharp
 let PetPigletWithSubmit (init: Pet) =
     Piglet.Return (fun s n -> { species = s; name = n })
     <*> Piglet.Yield init.species
@@ -242,7 +242,7 @@ Now `PetPiglet` only triggers a new return value when the user submits
 the form. A new value of type `Submitter<Pet>` is passed to the view
 function, and rendering it is just as simple:
 
-```
+```fsharp
 let RenderPetWithSubmit species name submit =
     Div [
         Controls.Radio species [
@@ -265,7 +265,7 @@ We have already seen `Piglet.Run`; but another common action to do
 with the result value is to display it. You can do it by passing a
 container element to `Controls.Show`:
 
-```
+```fsharp
 let RenderPetWithSubmit species name submit =
     Div [
         // ...
@@ -280,7 +280,7 @@ let RenderPetWithSubmit species name submit =
 Similarly, to display the error messages, you can use
 `Controls.ShowErrors`.
 
-```
+```fsharp
 let RenderPetWithSubmit species name submit =
     Div [
         // ...
@@ -293,7 +293,7 @@ let RenderPetWithSubmit species name submit =
 You can even combine the two using `Controls.ShowResult`. It passes
 a value of the following type:
 
-```
+```fsharp
 type Result<'a> =
     | Success of 'a
     | Failure of ErrorMessage list
@@ -302,7 +302,7 @@ type Result<'a> =
 where `ErrorMessage` has a `Message` field containing the text
 message. Here is an example use of `ShowResult`:
 
-```
+```fsharp
 let RenderPetWithSubmit species name submit =
     Div [
         // ...
@@ -331,7 +331,7 @@ reorder pets in the form.
 
 Here is the final data we want to collect:
 
-```
+```fsharp
 type Person =
     {
         firstName: string
@@ -343,7 +343,7 @@ type Person =
 Defining a Piglet for this type is relatively straightforward using
 a function from the `Piglet.Many*` family:
 
-```
+```fsharp
 let PersonPiglet (init: Person) =
     Piglet.Return (fun first last pets ->
         { firstName = first; lastName = last; pets = pets })
@@ -372,7 +372,7 @@ argument to the render function of type `Many.UnitStream<'a, 'v, 'w>`.
 The exact meaning of these type arguments is not important to
 understand. This is how you render such a stream:
 
-```
+```fsharp
 let RenderPerson firstName lastName pets submit =
     Div [
         Controls.Input firstName
@@ -413,7 +413,7 @@ many cases it is useful to show the error associated with a given
 field next to that field. Unfortunately, the following doesn't produce
 the desired effect:
 
-```
+```fsharp
 Controls.ShowErrors firstName (fun messages -> (* ... *))
 ```
 
@@ -424,7 +424,7 @@ propagated to the higher-level piglet. But the error knows which
 individual stream has an invalid value, so we can use this to filter
 error messages.
 
-```
+```fsharp
 Controls.ShowErrors (firstName.Through submit) (fun messages -> (* ... *))
 ```
 
@@ -433,7 +433,7 @@ Controls.ShowErrors (firstName.Through submit) (fun messages -> (* ... *))
 Here is now the complete example, showcasing all the elements described
 in this tutorial.
 
-```
+```fsharp
 type Species =
     | Cat | Dog | Piglet
     [<JavaScript>]
