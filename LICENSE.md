@@ -1,9 +1,9 @@
-# WebSharper.Piglets Licensing
+# WebSharper Licensing
 
-For open source use, WebSharper.Piglets is licensed under [GNU Affero General
+For open source use, WebSharper is licensed under [GNU Affero General
 Public License v3.0 (AGPLv3)][agpl] with open-source exceptions for most
 OSS license types (see below). This enables you to develop open
-source WebSharper.Piglets applications royalty-free, without requiring a
+source WebSharper applications royalty-free, without requiring a
 license.  However, for closed source use, you must acquire a developer
 license.
 
@@ -638,7 +638,7 @@ copy of the Program in return for a fee.
 ## Open Source Exception
 
 This Exception applies to open source applications built with
-WebSharper.Piglets ("The Software"), and to open source Derivative Works of
+WebSharper ("The Software"), and to open source Derivative Works of
 the Software, that use the Software under the terms of GNU Affero
 General Public License, version 3. The Exception extends AGPLv3 by
 providing additional grants.

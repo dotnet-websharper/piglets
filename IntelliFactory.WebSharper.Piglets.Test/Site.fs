@@ -1,4 +1,21 @@
-﻿namespace Website
+// $begin{copyright}
+//
+// This file is part of WebSharper
+//
+// Copyright (c) 2008-2013 IntelliFactory
+//
+// For open source use, WebSharper is licensed under GNU Affero General Public
+// License v3.0 (AGPLv3) with open-source exceptions for most OSS license types
+// (see http://websharper.com/licensing). This enables you to develop open
+// source WebSharper applications royalty-free, without requiring a license.
+// However, for closed source use, you must acquire a developer license.
+//
+// Please contact IntelliFactory for licensing and support options at
+// {licensing|sales @ intellifactory.com}.
+//
+// $end{copyright}
+
+namespace Website
 
 open IntelliFactory.Html
 open IntelliFactory.WebSharper

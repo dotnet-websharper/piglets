@@ -1,21 +1,17 @@
-﻿// $begin{copyright}
+// $begin{copyright}
 //
-// This file is part of WebSharper.Piglets
+// This file is part of WebSharper
 //
 // Copyright (c) 2008-2013 IntelliFactory
 //
-// GNU Affero General Public License Usage
-// WebSharper is free software: you can redistribute it and/or modify it under
-// the terms of the GNU Affero General Public License, version 3, as published
-// by the Free Software Foundation.
+// For open source use, WebSharper is licensed under GNU Affero General Public
+// License v3.0 (AGPLv3) with open-source exceptions for most OSS license types
+// (see http://websharper.com/licensing). This enables you to develop open
+// source WebSharper applications royalty-free, without requiring a license.
+// However, for closed source use, you must acquire a developer license.
 //
-// WebSharper is distributed in the hope that it will be useful, but WITHOUT
-// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-// FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
-// for more details at <http://www.gnu.org/licenses/>.
-//
-// If you are unsure which license is appropriate for your use, please contact
-// IntelliFactory at http://intellifactory.com/contact.
+// Please contact IntelliFactory for licensing and support options at
+// {licensing|sales @ intellifactory.com}.
 //
 // $end{copyright}
 
@@ -133,7 +129,7 @@ type ErrorMessage with
     [<JavaScript>]
     static member Create msg (reader: Reader<'a>) =
         new ErrorMessage(msg, reader.Id)
-            
+
 
 /// I'd rather use an object expression,
 /// but they're forbidden inside [<JS>].
@@ -213,7 +209,7 @@ type Piglet<'a, 'v> =
     }
 
     [<JavaScript>]
-    member this.Stream = this.stream                
+    member this.Stream = this.stream
 
 [<AutoOpen>]
 module Pervasives =
@@ -351,13 +347,13 @@ module Many =
         member this.AddRender f = adder.view f
 
     type UnitStream<'a, 'v, 'w>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>, init: Piglet<'a,'v-> 'w>,``default`` : 'a) =
-        
+
         inherit Stream<'a,'v,'w,'v,'w>(p,out,init)
 
-        let submitStream = 
+        let submitStream =
             let submitter = Stream<_>(Failure [])
             let trigger = init.Stream.Trigger
-            
+
             submitter.Subscribe(
                         function Failure msgs -> Failure msgs |> trigger
                                 | Success () -> Success ``default``  |> trigger
