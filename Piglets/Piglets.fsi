@@ -117,6 +117,20 @@ module Many =
         ///Add an element to the collection set to the default values
         member Add : Writer<unit>
 
+module Choose =
+
+    [<Class>]
+    type Stream<'o, 'i, 'u, 'v, 'w, 'x when 'i : equality> =
+        inherit Reader<'o>
+
+        interface IDisposable
+
+        /// Render the Piglet that allows the user to choose between different options.
+        member Chooser : 'u -> 'v
+
+        /// Render the Piglet that allows the user to choose the value for the selected option.
+        member Choice : Container<'x, 'y> -> 'w -> 'y
+
 module Piglet =
 
     /// Create a Piglet initialized with x that passes its stream to the view.
@@ -133,6 +147,9 @@ module Piglet =
 
     /// Create a Piglet that returns many values, each created according to the given Piglet.
     val ManyInit : 'a[] -> 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.UnitStream<'a, 'v, 'w> -> 'x) -> 'x>
+
+    /// Create a Piglet that allows the user to choose between several options.
+    val Choose : Piglet<'i, 'u -> 'v> -> seq<'i * Piglet<'o, 'w -> 'x>> -> Piglet<'o, (Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x> -> 'y) -> 'y>
 
     /// Create a Piglet value that streams the value every time it receives a signal.
     /// The signaling function is passed to the view.

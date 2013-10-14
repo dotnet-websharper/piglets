@@ -51,6 +51,13 @@ val RenderMany :
     container: Element ->
     Element
 
+/// Render a choice stream.
+val RenderChoice :
+    stream: Choose.Stream<'o, 'i, 'u, 'v, 'w, Element> ->
+    renderOne: 'w ->
+    container: Element ->
+    Element
+
 /// Display a reactive value.
 val ShowResult :
     reader: Reader<'a> ->

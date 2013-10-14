@@ -149,6 +149,10 @@ let RenderMany (many: Many.UnitStream<_,_,_>) renderOne container =
     many.Render (HtmlContainer container) renderOne
 
 [<JavaScript>]
+let RenderChoice (choice: Choose.Stream<_,_,_,_,_,_>) renderIt container =
+    choice.Choice (HtmlContainer container) renderIt
+
+[<JavaScript>]
 let Container c = HtmlContainer(c) :> Container<_,_>
 
 [<JavaScript>]

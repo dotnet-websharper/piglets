@@ -363,6 +363,52 @@ module Many =
 
         member this.Add = submitStream :> Writer<unit>
 
+[<JavaScript>]
+module Choose =
+
+    open System.Collections.Generic
+
+    type Stream<'o, 'i, 'u, 'v, 'w, 'x when 'i : equality>(chooser: Piglet<'i, 'u -> 'v>, choices: seq<'i * Piglet<'o, 'w -> 'x>>, out: Stream<'o>) =
+        inherit Reader<'o>(out.Id)
+
+        let plStream = Stream<_>(Failure [])
+
+        let subscriptions =
+            choices |> Seq.map (fun (_, choice) ->
+                choice.stream.Subscribe out.Trigger)
+            |> List.ofSeq
+            |> ref
+
+        override this.Latest = out.Latest
+        override this.Subscribe f = out.Subscribe f
+
+        member this.Chooser (f: 'u) : 'v =
+            chooser.view f
+
+        member this.Choice (c: Container<'x, 'y>) (f: 'w) : 'y =
+            let renders = Dictionary()
+            for i, pl in choices do
+                renders.[i] <- (pl.view f, pl)
+            let hasChild = ref false
+            subscriptions :=
+                chooser.stream.SubscribeImmediate (fun res ->
+                    if !hasChild then c.Remove 0
+                    match res with
+                    | Failure _ -> hasChild := false
+                    | Success i ->
+                        hasChild := renders.ContainsKey i
+                        if !hasChild then
+                            let render, pl = renders.[i]
+                            c.Add render
+                            out.Trigger pl.stream.Latest)
+                :: !subscriptions
+            c.Container
+
+        interface IDisposable with
+            member this.Dispose() =
+                for s in !subscriptions do
+                    s.Dispose()
+
 module Piglet =
 
     [<JavaScript>]
@@ -386,6 +432,15 @@ module Piglet =
         {
             stream = submitter.Output
             view = fin.view <<^ submitter
+        }
+
+    [<JavaScript>]
+    let Choose (chooser: Piglet<'i, 'u -> 'v>) (choices: seq<'i * Piglet<'o, 'w -> 'x>>) =
+        let s = Stream (Failure [])
+        let c = new Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x>(chooser, choices, s)
+        {
+            stream = s
+            view = fun f -> f c
         }
 
     [<JavaScript>]
