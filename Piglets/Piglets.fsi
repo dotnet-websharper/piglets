@@ -177,6 +177,9 @@ module Piglet =
     /// Map the arguments passed to the view.
     val MapViewArgs : 'va -> Piglet<'a, 'va -> 'vb> -> Piglet<'a, ('vb -> 'vc) -> 'vc>
 
+    /// Create a Piglet for a double field for confirmation (e.g. for passwords).
+    val Confirm : init:'a -> validate:(Piglet<'a,((Stream<'a> -> 'b) -> 'b)> -> Piglet<'a,(('c -> 'd -> 'c * 'd) -> Stream<'a> -> 'e)>) -> nomatch:string -> Piglet<'a,(('e -> 'f) -> 'f)> when 'a : equality
+
     module Validation =
 
         /// If the Piglet value passes the predicate, it is passed on;
