@@ -62,6 +62,13 @@ module ViewModel =
     module V = Piglet.Validation
 
     [<JavaScript>]
+    let Password() =
+        Piglet.Confirm ""
+            (V.Is (fun s -> s.Length >= 6) "Password must be at least 6 characters long."
+             >> V.Is (V.Match "[^a-zA-Z]") "Password must contain at least one non-letter character.")
+            "Passwords don't match."
+
+    [<JavaScript>]
     let NotANumber x =
         V.Is (fun s -> int s = 0) "I am not a number! I am a free man!" x
 

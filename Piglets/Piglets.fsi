@@ -194,6 +194,9 @@ module Piglet =
     /// Map the arguments passed to the view.
     val MapViewArgs : 'va -> Piglet<'a, 'va -> 'vb> -> Piglet<'a, ('vb -> 'vc) -> 'vc>
 
+    /// Create a Piglet for a double field for confirmation (e.g. for passwords).
+    val Confirm : init:'a -> validate:(Piglet<'a,((Stream<'a> -> 'b) -> 'b)> -> Piglet<'a,(('c -> 'd -> 'c * 'd) -> Stream<'a> -> 'e)>) -> nomatch:string -> Piglet<'a,(('e -> 'f) -> 'f)> when 'a : equality
+
     module Validation =
 
         /// If the Piglet value passes the predicate, it is passed on;
@@ -212,4 +215,4 @@ module Piglet =
         /// Check that a string matches a regexp.
         /// Can be used as predicate for Is and Is', eg:
         /// Validation.Is (Validation.Match "^test.*") "Field must start with 'test'."
-        val Match : regexp: string -> value: string -> bool
+        val Match : regexp: string -> (string -> bool)

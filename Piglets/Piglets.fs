@@ -597,4 +597,15 @@ module Piglet =
         let NotEmpty x = x <> ""
 
         [<JavaScript>]
-        let Match re x = (RegExp re).Test x
+        let Match re = (RegExp re).Test
+
+    [<JavaScript>]
+    let Confirm init validate nomatch =
+        let second = Yield init
+        Return (fun a b -> a, b)
+        <*> validate (Yield init)
+        <*> second
+        |> Validation.Is' (fun (a, b) -> a = b)
+            (ErrorMessage.Create nomatch second.Stream)
+        |> Map fst
+        |> MapViewArgs (fun a b -> (a, b))
