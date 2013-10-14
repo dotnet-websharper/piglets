@@ -42,7 +42,10 @@ val IntInput : Stream<int> -> Element
 val CheckBox : Stream<bool> -> Element
 
 /// A Piglet radio button set.
-val Radio<'a when 'a : equality> : Stream<'a> -> seq<'a * string> -> Element
+val Radio : Stream<'a> -> seq<'a * string> -> Element when 'a : equality
+
+/// A Piglet combobox.
+val Select : Stream<'a> -> seq<'a * string> -> Element when 'a : equality
 
 /// Render a multiple-valued stream.
 val RenderMany :

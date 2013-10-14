@@ -143,7 +143,7 @@ module View =
                 Div [Label [Text "Contact:"]
                      Br []
                      contact.Chooser (fun stream ->
-                        C.Radio stream [true, "Email"; false, "Phone number"])
+                        C.Select stream [true, "Email"; false, "Phone number"])
                      Div [] |> Controls.RenderChoice contact (fun stream -> textInput stream)]
                 Div [C.CheckBox participates |> C.WithLabel "Participate in the survey"]
                 Div [C.TextArea comments |> C.WithLabel "Comments:"]
