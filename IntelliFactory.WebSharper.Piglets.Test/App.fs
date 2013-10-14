@@ -99,18 +99,17 @@ module ViewModel =
         <*> (Piglet.Yield init.age
             |> V.Is (fun a -> a >= 18) "You must be over 18.")
         <*> Piglet.Yield init.gender
-        <*> Piglet.Choose (Piglet.Yield true) [
-                true,
-                    (Piglet.Yield (match init.contact with
+        <*> Piglet.Choose (Piglet.Yield true) (function
+                | true ->
+                    Piglet.Yield (match init.contact with
                                   | Email s -> s
                                   | _ -> "")
-                     |> Piglet.Map Email)
-                false,
-                    (Piglet.Yield (match init.contact with
-                                   | PhoneNumber s -> s
-                                   | _ -> "")
-                     |> Piglet.Map PhoneNumber)
-            ]
+                    |> Piglet.Map Email
+                | false ->
+                    Piglet.Yield (match init.contact with
+                                  | PhoneNumber s -> s
+                                  | _ -> "")
+                    |> Piglet.Map PhoneNumber)
         <*> Piglet.Yield init.comments
         <*> Piglet.Yield init.participates
         <*> Piglet.ManyInit init.friends { firstName = ""; lastName = "" } Name

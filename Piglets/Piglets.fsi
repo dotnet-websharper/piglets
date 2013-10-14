@@ -149,7 +149,7 @@ module Piglet =
     val ManyInit : 'a[] -> 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.UnitStream<'a, 'v, 'w> -> 'x) -> 'x>
 
     /// Create a Piglet that allows the user to choose between several options.
-    val Choose : Piglet<'i, 'u -> 'v> -> seq<'i * Piglet<'o, 'w -> 'x>> -> Piglet<'o, (Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x> -> 'y) -> 'y>
+    val Choose : Piglet<'i, 'u -> 'v> -> ('i -> Piglet<'o, 'w -> 'x>) -> Piglet<'o, (Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x> -> 'y) -> 'y>
 
     /// Create a Piglet value that streams the value every time it receives a signal.
     /// The signaling function is passed to the view.

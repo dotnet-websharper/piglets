@@ -368,16 +368,14 @@ module Choose =
 
     open System.Collections.Generic
 
-    type Stream<'o, 'i, 'u, 'v, 'w, 'x when 'i : equality>(chooser: Piglet<'i, 'u -> 'v>, choices: seq<'i * Piglet<'o, 'w -> 'x>>, out: Stream<'o>) =
+    type Stream<'o, 'i, 'u, 'v, 'w, 'x when 'i : equality>(chooser: Piglet<'i, 'u -> 'v>, choice: 'i -> Piglet<'o, 'w -> 'x>, out: Stream<'o>) =
         inherit Reader<'o>(out.Id)
 
         let plStream = Stream<_>(Failure [])
 
-        let subscriptions =
-            choices |> Seq.map (fun (_, choice) ->
-                choice.stream.Subscribe out.Trigger)
-            |> List.ofSeq
-            |> ref
+        let choiceSubscriptions = Dictionary()
+
+        let subscriptions = ref []
 
         override this.Latest = out.Latest
         override this.Subscribe f = out.Subscribe f
@@ -387,8 +385,6 @@ module Choose =
 
         member this.Choice (c: Container<'x, 'y>) (f: 'w) : 'y =
             let renders = Dictionary()
-            for i, pl in choices do
-                renders.[i] <- (pl.view f, pl)
             let hasChild = ref false
             subscriptions :=
                 chooser.stream.SubscribeImmediate (fun res ->
@@ -396,11 +392,22 @@ module Choose =
                     match res with
                     | Failure _ -> hasChild := false
                     | Success i ->
-                        hasChild := renders.ContainsKey i
-                        if !hasChild then
-                            let render, pl = renders.[i]
-                            c.Add render
-                            out.Trigger pl.stream.Latest)
+                        hasChild := true
+                        let pl =
+                            if choiceSubscriptions.ContainsKey i then
+                                fst choiceSubscriptions.[i]
+                            else
+                                let pl = choice i
+                                choiceSubscriptions.[i] <-
+                                    (pl, pl.stream.Subscribe out.Trigger)
+                                pl
+                        let render =
+                            if renders.ContainsKey i then
+                                renders.[i]
+                            else
+                                pl.view f
+                        c.Add render
+                        out.Trigger pl.stream.Latest)
                 :: !subscriptions
             c.Container
 
@@ -408,6 +415,8 @@ module Choose =
             member this.Dispose() =
                 for s in !subscriptions do
                     s.Dispose()
+                choiceSubscriptions |> Seq.iter (fun (KeyValue (_, (_, s))) ->
+                    s.Dispose())
 
 module Piglet =
 
@@ -435,7 +444,7 @@ module Piglet =
         }
 
     [<JavaScript>]
-    let Choose (chooser: Piglet<'i, 'u -> 'v>) (choices: seq<'i * Piglet<'o, 'w -> 'x>>) =
+    let Choose (chooser: Piglet<'i, 'u -> 'v>) (choices: 'i -> Piglet<'o, 'w -> 'x>) =
         let s = Stream (Failure [])
         let c = new Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x>(chooser, choices, s)
         {
