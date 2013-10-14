@@ -542,4 +542,4 @@ module Piglet =
         let NotEmpty x = x <> ""
 
         [<JavaScript>]
-        let Match re x = (RegExp re).Test x
+        let Match re = (RegExp re).Test

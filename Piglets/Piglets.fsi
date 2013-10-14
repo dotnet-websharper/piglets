@@ -195,4 +195,4 @@ module Piglet =
         /// Check that a string matches a regexp.
         /// Can be used as predicate for Is and Is', eg:
         /// Validation.Is (Validation.Match "^test.*") "Field must start with 'test'."
-        val Match : regexp: string -> value: string -> bool
+        val Match : regexp: string -> (string -> bool)
