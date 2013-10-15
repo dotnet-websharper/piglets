@@ -130,7 +130,6 @@ type ErrorMessage with
     static member Create msg (reader: Reader<'a>) =
         new ErrorMessage(msg, reader.Id)
 
-
 /// I'd rather use an object expression,
 /// but they're forbidden inside [<JS>].
 [<Sealed>]
@@ -186,7 +185,7 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
     [<JavaScript>] override this.Latest = output.Latest
     [<JavaScript>] override this.Subscribe f = output.Subscribe f
 
-module private Stream =
+module Stream =
 
     [<JavaScript>]
     let Ap (sf: Stream<'a -> 'b>) (sx: Stream<'a>) : Stream<'b> =
@@ -201,6 +200,21 @@ module private Stream =
         sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, Result.Join sx.Latest))) |> ignore
         sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, Result.Join x))) |> ignore
         out
+
+    [<JavaScript>]
+    let Map (a2b: 'a -> 'b) (b2a: 'b -> 'a) (s: Stream<'a>) : Stream<'b> =
+        let s' = Stream<'b> (Result.Map a2b s.Latest, id = s.Id)
+        let pa = ref s.Latest
+        let pb = ref s'.Latest
+        s.Subscribe (fun a ->
+            if !pa !==. a then
+                pb := Result.Map a2b a
+                s'.Trigger !pb) |> ignore
+        s'.Subscribe (fun b ->
+            if !pb !==. b then
+                pa := Result.Map b2a b
+                s.Trigger !pa) |> ignore
+        s'
 
 type Piglet<'a, 'v> =
     {
@@ -573,6 +587,14 @@ module Piglet =
             stream = f.stream
             view = f.view >>^ view
         }
+
+    [<JavaScript>]
+    let YieldOption (x: 'a option) (none: 'a) =
+        Yield x
+        |> MapViewArgs
+            (Stream.Map
+                (function None -> none | Some s -> s)
+                (fun x -> if x = none then None else Some x))
 
     module Validation =
 

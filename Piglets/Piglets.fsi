@@ -83,6 +83,10 @@ module Pervasives =
     /// Apply a Piglet function to a Piglet Result.
     val (<*?>) : Piglet<'a -> 'b, 'c -> 'd> -> Piglet<Result<'a>, 'd -> 'e> -> Piglet<'b, 'c -> 'e>
 
+module Stream =
+
+    val Map : ('a -> 'b) -> ('b -> 'a) -> Stream<'a> -> Stream<'b>
+
 type Container<'``in``, 'out> =
     abstract member Add : '``in`` -> unit
     abstract member Remove : int -> unit
@@ -135,6 +139,10 @@ module Piglet =
 
     /// Create a Piglet initialized with x that passes its stream to the view.
     val Yield : 'a -> Piglet<'a, (Stream<'a> -> 'b) -> 'b>
+
+    /// Create a Piglet with optional value initialized with init that passes its stream to the view.
+    /// The stream passed is a non-optional stream, and the given noneValue is mapped to None.
+    val YieldOption : init: 'a option -> noneValue: 'a -> Piglet<'a option, (Stream<'a> -> 'b) -> 'b> when 'a : equality
 
     /// Create a Piglet initialized with x that doesn't pass any stream to the view.
     val Return : 'a -> Piglet<'a, 'b -> 'b>

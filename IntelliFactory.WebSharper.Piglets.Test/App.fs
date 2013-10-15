@@ -41,7 +41,7 @@ module Model =
             name: Name
             age: int
             gender: Gender
-            comments: string
+            comments: string option
             participates: bool
             friends: Name[]
             contact : Contact
@@ -53,7 +53,7 @@ module Model =
             + ", aged " + string u.age
             + if u.gender = Male then ", male" else ", female"
             + ", contact: " + Contact.Pretty u.contact
-            + if u.comments = "" then "\nNo comment" else ("\n" + u.comments)
+            + (match u.comments with None -> "\nNo comment" | Some c -> ("\n" + c))
             + if u.participates then "\nParticipates" else "\nDoesn't participate"
 
 module ViewModel =
@@ -110,7 +110,7 @@ module ViewModel =
                                   | PhoneNumber s -> s
                                   | _ -> "")
                     |> Piglet.Map PhoneNumber)
-        <*> Piglet.Yield init.comments
+        <*> Piglet.YieldOption init.comments ""
         <*> Piglet.Yield init.participates
         <*> Piglet.ManyInit init.friends { firstName = ""; lastName = "" } Name
         |> Piglet.TransmitReader
@@ -188,8 +188,8 @@ module View =
                                     | true -> "bold"
                                     | false -> "normal")
                             TD [] |> C.Show liveUser (function
-                                | {comments = ""} -> [I [Text "(no comment)"]]
-                                | {comments = c} -> [Span [Text c]])
+                                | {comments = None} -> [I [Text "(no comment)"]]
+                                | {comments = Some c} -> [Span [Text c]])
                             TD [] |> C.ShowString friends
                                 (Seq.map (fun n -> n.firstName + " " + n.lastName)
                                 >> String.concat ", ")
@@ -219,7 +219,7 @@ let UI() =
         age = 40
         gender = Model.Male
         contact = Model.Email "john@rambo.com"
-        comments = "Blah blah blah"
+        comments = Some "Blah blah blah"
         participates = true
         friends =
             [|
