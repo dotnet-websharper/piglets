@@ -126,6 +126,26 @@ let Radio (stream: Stream<'a>) (values: seq<'a * string>) =
         stream.Subscribe set |> ignore)
 
 [<JavaScript>]
+let Select (stream: Stream<'a>) (values: seq<'a * string>) =
+    let name = nextId()
+    let values = Array.ofSeq values
+    let elts = values |> Array.map (fun (x, label) ->
+        let id = nextId()
+        Html.Default.Tags.Option [Attr.Value id] -< [Text label])
+    Select elts
+    |>! OnChange (fun e ->
+        if e.Body?selectedIndex >= 0 then
+            stream.Trigger(Success (fst values.[e.Body?selectedIndex])))
+    |>! OnAfterRender (fun div ->
+        stream.SubscribeImmediate (function
+            | Success v ->
+                match Array.tryFindIndex (fun (v', _) -> v = v') values with
+                | Some i -> elts.[i].SetAttribute("selected", "")
+                | None -> ()
+            | Failure _ -> ())
+        |> ignore)
+
+[<JavaScript>]
 type HtmlContainer (container: Element) =
     interface Container<Element, Element> with
 
@@ -147,6 +167,10 @@ type HtmlContainer (container: Element) =
 [<JavaScript>]
 let RenderMany (many: Many.UnitStream<_,_,_>) renderOne container =
     many.Render (HtmlContainer container) renderOne
+
+[<JavaScript>]
+let RenderChoice (choice: Choose.Stream<_,_,_,_,_,_>) renderIt container =
+    choice.Choice (HtmlContainer container) renderIt
 
 [<JavaScript>]
 let Container c = HtmlContainer(c) :> Container<_,_>

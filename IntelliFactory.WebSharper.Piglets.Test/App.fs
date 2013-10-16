@@ -26,15 +26,34 @@ module Model =
 
     type Gender = Male | Female
 
+    type Contact =
+        | Email of string
+        | PhoneNumber of string
+
+        [<JavaScript>]
+        static member Pretty c =
+            match c with
+            | Email e -> e + " (email)"
+            | PhoneNumber n -> n + " (phone)"
+
     type User =
-        { name: Name; age: int; gender: Gender; comments: string; participates: bool; friends: Name[] }
+        {
+            name: Name
+            age: int
+            gender: Gender
+            comments: string option
+            participates: bool
+            friends: Name[]
+            contact : Contact
+        }
 
         [<JavaScript>]
         static member Pretty u =
             u.name.firstName + " " + u.name.lastName
             + ", aged " + string u.age
             + if u.gender = Male then ", male" else ", female"
-            + if u.comments = "" then "\nNo comment" else ("\n" + u.comments)
+            + ", contact: " + Contact.Pretty u.contact
+            + (match u.comments with None -> "\nNo comment" | Some c -> ("\n" + c))
             + if u.participates then "\nParticipates" else "\nDoesn't participate"
 
 module ViewModel =
@@ -66,12 +85,32 @@ module ViewModel =
 
     [<JavaScript>]
     let User init =
-        Piglet.Return (fun n a g c p f -> { name = n; age = a; gender = g; comments = c; participates = p; friends = f })
+        Piglet.Return (fun n a g ct cm p f ->
+            {
+                name = n
+                age = a
+                gender = g
+                contact = ct
+                comments = cm
+                participates = p
+                friends = f
+            })
         <*> Name init.name
         <*> (Piglet.Yield init.age
             |> V.Is (fun a -> a >= 18) "You must be over 18.")
         <*> Piglet.Yield init.gender
-        <*> Piglet.Yield init.comments
+        <*> Piglet.Choose (Piglet.Yield true) (function
+                | true ->
+                    Piglet.Yield (match init.contact with
+                                  | Email s -> s
+                                  | _ -> "")
+                    |> Piglet.Map Email
+                | false ->
+                    Piglet.Yield (match init.contact with
+                                  | PhoneNumber s -> s
+                                  | _ -> "")
+                    |> Piglet.Map PhoneNumber)
+        <*> Piglet.YieldOption init.comments ""
         <*> Piglet.Yield init.participates
         <*> Piglet.ManyInit init.friends { firstName = ""; lastName = "" } Name
         |> Piglet.TransmitReader
@@ -93,20 +132,25 @@ module View =
     [<JavaScript>]
     let User init =
         ViewModel.User init
-        |> Piglet.Render (fun (firstName, lastName) age gender comments participates friends liveUser submit ->
-            let nameInput s =
+        |> Piglet.Render (fun (firstName, lastName) age gender contact comments participates friends liveUser submit ->
+            let textInput s =
                 C.Input s |> RedBgOnError (s.Through liveUser)
             Div [
-                Div [nameInput firstName |> C.WithLabel "First name:"]
-                Div [nameInput lastName |> C.WithLabel "Last name:"]
+                Div [textInput firstName |> C.WithLabel "First name:"]
+                Div [textInput lastName |> C.WithLabel "Last name:"]
                 Div [C.Radio gender [Male, "Male"; Female, "Female"]]
                 Div [C.IntInput age |> RedBgOnError (age.Through liveUser) |> C.WithLabel "Age:"]
+                Div [Label [Text "Contact:"]
+                     Br []
+                     contact.Chooser (fun stream ->
+                        C.Select stream [true, "Email"; false, "Phone number"])
+                     Div [] |> Controls.RenderChoice contact (fun stream -> textInput stream)]
                 Div [C.CheckBox participates |> C.WithLabel "Participate in the survey"]
                 Div [C.TextArea comments |> C.WithLabel "Comments:"]
                 Div [] |> C.RenderMany friends (fun ops (first, last) ->
                     Div [
-                        nameInput first
-                        nameInput last
+                        textInput first
+                        textInput last
                         C.Button ops.Delete -< [B [Text "Delete this friend"]]
                         C.ButtonValidate ops.MoveUp -< [Text "Move up"]
                         C.ButtonValidate ops.MoveDown -< [Text "Move down"]
@@ -116,13 +160,14 @@ module View =
                 Table [
                     TBody [
                         TR [
-                            TH [Attr.ColSpan "7"] -< [Text "Summary"]
+                            TH [Attr.ColSpan "8"] -< [Text "Summary"]
                         ]
                         TR [
                             TH [Text "First name"]
                             TH [Text "Last name"]
                             TH [Text "Gender"]
                             TH [Text "Age"]
+                            TH [Text "Contact"]
                             TH [Text "Participates"]
                             TH [Text "Comments"]
                             TH [Text "Friends"]
@@ -133,6 +178,7 @@ module View =
                             TD [] |> C.ShowString liveUser (fun u -> u.name.lastName)
                             TD [] |> C.ShowString liveUser (fun u -> if u.gender = Male then "Male" else "Female")
                             TD [] |> C.ShowString liveUser (fun u -> string u.age)
+                            TD [] |> C.ShowString liveUser (fun u -> Contact.Pretty u.contact)
                             // This one will show up even if other parts are invalid
                             // because it uses the `participates` stream instead of `liveUser`
                             TD [] |> C.ShowString participates (function
@@ -142,8 +188,8 @@ module View =
                                     | true -> "bold"
                                     | false -> "normal")
                             TD [] |> C.Show liveUser (function
-                                | {comments = ""} -> [I [Text "(no comment)"]]
-                                | {comments = c} -> [Span [Text c]])
+                                | {comments = None} -> [I [Text "(no comment)"]]
+                                | {comments = Some c} -> [Span [Text c]])
                             TD [] |> C.ShowString friends
                                 (Seq.map (fun n -> n.firstName + " " + n.lastName)
                                 >> String.concat ", ")
@@ -172,7 +218,8 @@ let UI() =
         name = { firstName = "John"; lastName = "Rambo" }
         age = 40
         gender = Model.Male
-        comments = "Blah blah blah"
+        contact = Model.Email "john@rambo.com"
+        comments = Some "Blah blah blah"
         participates = true
         friends =
             [|

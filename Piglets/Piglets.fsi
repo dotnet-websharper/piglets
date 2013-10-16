@@ -83,6 +83,10 @@ module Pervasives =
     /// Apply a Piglet function to a Piglet Result.
     val (<*?>) : Piglet<'a -> 'b, 'c -> 'd> -> Piglet<Result<'a>, 'd -> 'e> -> Piglet<'b, 'c -> 'e>
 
+module Stream =
+
+    val Map : ('a -> 'b) -> ('b -> 'a) -> Stream<'a> -> Stream<'b>
+
 type Container<'``in``, 'out> =
     abstract member Add : '``in`` -> unit
     abstract member Remove : int -> unit
@@ -117,13 +121,37 @@ module Many =
         ///Add an element to the collection set to the default values
         member Add : Writer<unit>
 
+module Choose =
+
+    [<Class>]
+    type Stream<'o, 'i, 'u, 'v, 'w, 'x when 'i : equality> =
+        inherit Reader<'o>
+
+        interface IDisposable
+
+        /// Render the Piglet that allows the user to choose between different options.
+        member Chooser : 'u -> 'v
+
+        /// Render the Piglet that allows the user to choose the value for the selected option.
+        member Choice : Container<'x, 'y> -> 'w -> 'y
+
 module Piglet =
 
     /// Create a Piglet initialized with x that passes its stream to the view.
     val Yield : 'a -> Piglet<'a, (Stream<'a> -> 'b) -> 'b>
 
+    /// Create a Piglet initialized with failure that passes its stream to the view.
+    val YieldFailure : unit -> Piglet<'a, (Stream<'a> -> 'b) -> 'b>
+
+    /// Create a Piglet with optional value initialized with init that passes its stream to the view.
+    /// The stream passed is a non-optional stream, and the given noneValue is mapped to None.
+    val YieldOption : init: 'a option -> noneValue: 'a -> Piglet<'a option, (Stream<'a> -> 'b) -> 'b> when 'a : equality
+
     /// Create a Piglet initialized with x that doesn't pass any stream to the view.
     val Return : 'a -> Piglet<'a, 'b -> 'b>
+
+    /// Create a Piglet initialized with failure that doesn't pass any stream to the view.
+    val ReturnFailure : unit -> Piglet<'a, 'b -> 'b>
 
     ///Piglet that returns many values with an additional piglet used to create new values in the collection
     val ManyPiglet : 'a[] -> (Piglet<'a,'y->'z>) -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Stream<'a, 'v, 'w,'y,'z> -> 'x) -> 'x>
@@ -133,6 +161,9 @@ module Piglet =
 
     /// Create a Piglet that returns many values, each created according to the given Piglet.
     val ManyInit : 'a[] -> 'a -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.UnitStream<'a, 'v, 'w> -> 'x) -> 'x>
+
+    /// Create a Piglet that allows the user to choose between several options.
+    val Choose : Piglet<'i, 'u -> 'v> -> ('i -> Piglet<'o, 'w -> 'x>) -> Piglet<'o, (Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x> -> 'y) -> 'y>
 
     /// Create a Piglet value that streams the value every time it receives a signal.
     /// The signaling function is passed to the view.

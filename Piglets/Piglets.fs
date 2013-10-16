@@ -130,7 +130,6 @@ type ErrorMessage with
     static member Create msg (reader: Reader<'a>) =
         new ErrorMessage(msg, reader.Id)
 
-
 /// I'd rather use an object expression,
 /// but they're forbidden inside [<JS>].
 [<Sealed>]
@@ -186,7 +185,7 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
     [<JavaScript>] override this.Latest = output.Latest
     [<JavaScript>] override this.Subscribe f = output.Subscribe f
 
-module private Stream =
+module Stream =
 
     [<JavaScript>]
     let Ap (sf: Stream<'a -> 'b>) (sx: Stream<'a>) : Stream<'b> =
@@ -201,6 +200,21 @@ module private Stream =
         sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, Result.Join sx.Latest))) |> ignore
         sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, Result.Join x))) |> ignore
         out
+
+    [<JavaScript>]
+    let Map (a2b: 'a -> 'b) (b2a: 'b -> 'a) (s: Stream<'a>) : Stream<'b> =
+        let s' = Stream<'b> (Result.Map a2b s.Latest, id = s.Id)
+        let pa = ref s.Latest
+        let pb = ref s'.Latest
+        s.Subscribe (fun a ->
+            if !pa !==. a then
+                pb := Result.Map a2b a
+                s'.Trigger !pb) |> ignore
+        s'.Subscribe (fun b ->
+            if !pb !==. b then
+                pa := Result.Map b2a b
+                s.Trigger !pa) |> ignore
+        s'
 
 type Piglet<'a, 'v> =
     {
@@ -363,11 +377,80 @@ module Many =
 
         member this.Add = submitStream :> Writer<unit>
 
+[<JavaScript>]
+module Choose =
+
+    open System.Collections.Generic
+
+    type Stream<'o, 'i, 'u, 'v, 'w, 'x when 'i : equality>(chooser: Piglet<'i, 'u -> 'v>, choice: 'i -> Piglet<'o, 'w -> 'x>, out: Stream<'o>) =
+        inherit Reader<'o>(out.Id)
+
+        let plStream = Stream<_>(Failure [])
+
+        let choiceSubscriptions = Dictionary()
+
+        let subscriptions =
+            ref [
+                chooser.stream.SubscribeImmediate (fun res ->
+                    res
+                    |> Result.Map (fun i ->
+                        i,
+                        if choiceSubscriptions.ContainsKey i then
+                            fst choiceSubscriptions.[i]
+                        else
+                            let pl = choice i
+                            choiceSubscriptions.[i] <-
+                                (pl, pl.stream.Subscribe out.Trigger)
+                            pl)
+                    |> plStream.Trigger)
+            ]
+
+        override this.Latest = out.Latest
+        override this.Subscribe f = out.Subscribe f
+
+        member this.Chooser (f: 'u) : 'v =
+            chooser.view f
+
+        member this.Choice (c: Container<'x, 'y>) (f: 'w) : 'y =
+            let renders = Dictionary()
+            let hasChild = ref false
+            subscriptions :=
+                plStream.SubscribeImmediate (fun res ->
+                    match res with
+                    | Failure _ -> ()
+                    | Success (i, pl) ->
+                        let render =
+                            if renders.ContainsKey i then
+                                renders.[i]
+                            else
+                                pl.view f
+                        out.Trigger pl.stream.Latest
+                        if !hasChild then c.Remove 0
+                        hasChild := true
+                        c.Add render)
+                :: !subscriptions
+            c.Container
+
+        interface IDisposable with
+            member this.Dispose() =
+                for s in !subscriptions do
+                    s.Dispose()
+                choiceSubscriptions |> Seq.iter (fun (KeyValue (_, (_, s))) ->
+                    s.Dispose())
+
 module Piglet =
 
     [<JavaScript>]
     let Yield (x: 'a) =
         let s = Stream(Success x)
+        {
+            stream = s
+            view = fun f -> f s
+        }
+
+    [<JavaScript>]
+    let YieldFailure () =
+        let s = Stream<'a>(Failure [])
         {
             stream = s
             view = fun f -> f s
@@ -381,11 +464,27 @@ module Piglet =
         }
 
     [<JavaScript>]
+    let ReturnFailure () =
+        {
+            stream = Stream(Failure [])
+            view = id
+        }
+
+    [<JavaScript>]
     let WithSubmit fin =
         let submitter = Submitter(fin.stream)
         {
             stream = submitter.Output
             view = fin.view <<^ submitter
+        }
+
+    [<JavaScript>]
+    let Choose (chooser: Piglet<'i, 'u -> 'v>) (choices: 'i -> Piglet<'o, 'w -> 'x>) =
+        let s = Stream (Failure [])
+        let c = new Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x>(chooser, choices, s)
+        {
+            stream = s
+            view = fun f -> f c
         }
 
     [<JavaScript>]
@@ -509,6 +608,14 @@ module Piglet =
             stream = f.stream
             view = f.view >>^ view
         }
+
+    [<JavaScript>]
+    let YieldOption (x: 'a option) (none: 'a) =
+        Yield x
+        |> MapViewArgs
+            (Stream.Map
+                (function None -> none | Some s -> s)
+                (fun x -> if x = none then None else Some x))
 
     module Validation =
 
