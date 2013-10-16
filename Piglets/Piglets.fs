@@ -389,7 +389,21 @@ module Choose =
 
         let choiceSubscriptions = Dictionary()
 
-        let subscriptions = ref []
+        let subscriptions =
+            ref [
+                chooser.stream.SubscribeImmediate (fun res ->
+                    res
+                    |> Result.Map (fun i ->
+                        i,
+                        if choiceSubscriptions.ContainsKey i then
+                            fst choiceSubscriptions.[i]
+                        else
+                            let pl = choice i
+                            choiceSubscriptions.[i] <-
+                                (pl, pl.stream.Subscribe out.Trigger)
+                            pl)
+                    |> plStream.Trigger)
+            ]
 
         override this.Latest = out.Latest
         override this.Subscribe f = out.Subscribe f
@@ -401,27 +415,19 @@ module Choose =
             let renders = Dictionary()
             let hasChild = ref false
             subscriptions :=
-                chooser.stream.SubscribeImmediate (fun res ->
-                    if !hasChild then c.Remove 0
+                plStream.SubscribeImmediate (fun res ->
                     match res with
-                    | Failure _ -> hasChild := false
-                    | Success i ->
-                        hasChild := true
-                        let pl =
-                            if choiceSubscriptions.ContainsKey i then
-                                fst choiceSubscriptions.[i]
-                            else
-                                let pl = choice i
-                                choiceSubscriptions.[i] <-
-                                    (pl, pl.stream.Subscribe out.Trigger)
-                                pl
+                    | Failure _ -> ()
+                    | Success (i, pl) ->
                         let render =
                             if renders.ContainsKey i then
                                 renders.[i]
                             else
                                 pl.view f
-                        c.Add render
-                        out.Trigger pl.stream.Latest)
+                        out.Trigger pl.stream.Latest
+                        if !hasChild then c.Remove 0
+                        hasChild := true
+                        c.Add render)
                 :: !subscriptions
             c.Container
 
