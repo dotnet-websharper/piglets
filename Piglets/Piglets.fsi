@@ -211,6 +211,21 @@ module Piglet =
     /// Create a Piglet for a double field for confirmation (e.g. for passwords).
     val Confirm : init:'a -> validate:(Piglet<'a,((Stream<'a> -> 'b) -> 'b)> -> Piglet<'a,(('c -> 'd -> 'c * 'd) -> Stream<'a> -> 'e)>) -> nomatch:string -> Piglet<'a,(('e -> 'f) -> 'f)> when 'a : equality
 
+    type Builder =
+        | Do
+
+        member Bind : Piglet<'i, 'u -> 'v> * ('i -> Piglet<'o, 'w -> 'x>) -> Piglet<'o, (Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x> -> 'y) -> 'y>
+
+        member Return : 'a -> Piglet<'a, 'b -> 'b>
+
+        member ReturnFrom : Piglet<'a, 'v> -> Piglet<'a, 'v>
+
+        member Yield : 'a -> Piglet<'a, (Stream<'a> -> 'b) -> 'b>
+
+        member YieldFrom : Piglet<'a, 'v> -> Piglet<'a, 'v>
+
+        member Zero : unit -> Piglet<'a, 'b -> 'b>
+
     module Validation =
 
         /// If the Piglet value passes the predicate, it is passed on;

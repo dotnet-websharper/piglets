@@ -438,6 +438,7 @@ module Choose =
                 choiceSubscriptions |> Seq.iter (fun (KeyValue (_, (_, s))) ->
                     s.Dispose())
 
+
 module Piglet =
 
     [<JavaScript>]
@@ -480,7 +481,7 @@ module Piglet =
 
     [<JavaScript>]
     let Choose (chooser: Piglet<'i, 'u -> 'v>) (choices: 'i -> Piglet<'o, 'w -> 'x>) =
-        let s = Stream (Failure [])
+        let s = Stream(Failure [])
         let c = new Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x>(chooser, choices, s)
         {
             stream = s
@@ -661,3 +662,19 @@ module Piglet =
             (ErrorMessage.Create nomatch second.Stream)
         |> Map fst
         |> MapViewArgs (fun a b -> (a, b))
+
+    [<JavaScript>]
+    type Builder =
+        | Do
+
+        member this.Bind(pl, f) = Choose pl f
+
+        member this.Return x = Return x
+
+        member this.ReturnFrom (pl: Piglet<_, _>) = pl
+
+        member this.Yield x = Yield x
+
+        member this.YieldFrom (pl: Piglet<_, _>) = pl
+
+        member this.Zero() = ReturnFailure()
