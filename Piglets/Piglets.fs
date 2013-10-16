@@ -449,9 +449,24 @@ module Piglet =
         }
 
     [<JavaScript>]
+    let YieldFailure () =
+        let s = Stream<'a>(Failure [])
+        {
+            stream = s
+            view = fun f -> f s
+        }
+
+    [<JavaScript>]
     let Return (x: 'a) =
         {
             stream = Stream(Success x)
+            view = id
+        }
+
+    [<JavaScript>]
+    let ReturnFailure () =
+        {
+            stream = Stream(Failure [])
             view = id
         }
 

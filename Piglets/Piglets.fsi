@@ -140,12 +140,18 @@ module Piglet =
     /// Create a Piglet initialized with x that passes its stream to the view.
     val Yield : 'a -> Piglet<'a, (Stream<'a> -> 'b) -> 'b>
 
+    /// Create a Piglet initialized with failure that passes its stream to the view.
+    val YieldFailure : unit -> Piglet<'a, (Stream<'a> -> 'b) -> 'b>
+
     /// Create a Piglet with optional value initialized with init that passes its stream to the view.
     /// The stream passed is a non-optional stream, and the given noneValue is mapped to None.
     val YieldOption : init: 'a option -> noneValue: 'a -> Piglet<'a option, (Stream<'a> -> 'b) -> 'b> when 'a : equality
 
     /// Create a Piglet initialized with x that doesn't pass any stream to the view.
     val Return : 'a -> Piglet<'a, 'b -> 'b>
+
+    /// Create a Piglet initialized with failure that doesn't pass any stream to the view.
+    val ReturnFailure : unit -> Piglet<'a, 'b -> 'b>
 
     ///Piglet that returns many values with an additional piglet used to create new values in the collection
     val ManyPiglet : 'a[] -> (Piglet<'a,'y->'z>) -> ('a -> Piglet<'a, 'v -> 'w>) -> Piglet<'a[], (Many.Stream<'a, 'v, 'w,'y,'z> -> 'x) -> 'x>
