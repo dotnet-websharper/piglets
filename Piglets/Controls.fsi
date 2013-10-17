@@ -135,5 +135,8 @@ val SubmitValidate : Submitter<'a> -> Element
 /// The button is disabled when no input is available.
 val ButtonValidate : Submitter<'a> -> Element
 
+/// An <a> link that triggers the given callback.
+val Link : Writer<unit> -> Element
+
 /// Enables the element when reading Success, disable it when reading Failure.
 val EnableOnSuccess : Reader<'a> -> Element -> Element

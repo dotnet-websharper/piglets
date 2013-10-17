@@ -222,9 +222,9 @@ let EnableOnSuccess (reader: Reader<'a>) (element: Element) =
         |> ignore)
 
 [<JavaScript>]
-let Submit (submit: Writer<_>) =
+let Submit (submit: Writer<unit>) =
     Default.Input [Attr.Type "submit"]
-    |>! OnClick (fun _ _ -> (submit :> Writer<unit>).Trigger(Success()))
+    |>! OnClick (fun _ _ -> submit.Trigger(Success()))
 
 [<JavaScript>]
 let SubmitValidate (submit: Submitter<'a>) =
@@ -238,6 +238,14 @@ let Button (submit: Writer<unit>) =
 [<JavaScript>]
 let ButtonValidate (submit: Submitter<'a>) =
     Button submit |> EnableOnSuccess submit.Input
+
+[<JavaScript>]
+let Link (submit: Writer<unit>) =
+    A [Attr.HRef "#"]
+    |>! OnAfterRender (fun e ->
+        JQuery.JQuery.Of(e.Body).On("click", fun ev ->
+            submit.Trigger(Success())
+            false))
 
 [<JavaScript>]
 let Attr
