@@ -57,6 +57,8 @@ type Stream<'a> =
     override Latest : Result<'a>
     override Subscribe : (Result<'a> -> unit) -> IDisposable
     member Trigger : Result<'a> -> unit
+    /// Return a new Writer that sends x to this when triggered.
+    member Write : x: 'a -> Writer<unit>
 
 [<Sealed>]
 [<Class>]
@@ -195,6 +197,9 @@ module Piglet =
 
     /// Map the Result of a Piglet, without changing its view.
     val MapAsyncResult : (Result<'a> -> Async<Result<'b>>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+
+    /// Flush error messages, replacing any failing state with a message-less failing state.
+    val FlushErrors : Piglet<'a, 'v> -> Piglet<'a, 'v>
 
     /// Run the action every time the Piglet's stream receives successful data.
     val Run : action: ('a -> unit) -> Piglet<'a, 'b> -> Piglet<'a, 'b>

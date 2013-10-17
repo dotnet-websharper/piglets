@@ -145,6 +145,15 @@ type ConcreteWriter<'a> (trigger: Result<'a> -> unit) =
         [<JavaScript>]
         member this.Trigger x = trigger x
 
+type Stream<'a> with
+
+    [<JavaScript>]
+    member this.Write x =
+        ConcreteWriter<unit>(function
+            | Failure m -> this.Trigger (Failure m)
+            | Success () -> this.Trigger (Success x))
+        :> Writer<unit>
+
 /// I'd rather use an object expression,
 /// but they're forbidden inside [<JS>].
 [<Sealed>]
@@ -588,6 +597,10 @@ module Piglet =
                     let! res = m x
                     return Success res
                 })
+
+    [<JavaScript>]
+    let FlushErrors p =
+        MapResult (function Failure _ -> Failure [] | x -> x) p
 
     [<JavaScript>]
     let RunResult action p =
