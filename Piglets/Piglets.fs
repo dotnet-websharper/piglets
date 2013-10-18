@@ -68,9 +68,17 @@ type Result<'a> =
         | Success (Success x) -> Success x
 
     [<JavaScript>]
-    static member Map (f: 'a -> 'b) = function
+    static member Map (f: 'a -> 'b) ra =
+        match ra with
         | Success x -> Success (f x)
         | Failure m -> Failure m
+
+    [<JavaScript>]
+    static member Map2 (f: 'a -> 'b -> 'c) ra rb =
+        match ra, rb with
+        | Success a, Success b -> Success (f a b)
+        | Failure ma, Failure mb -> Failure (ma @ mb)
+        | Failure m, _ | _, Failure m -> Failure m
 
     [<JavaScript>]
     static member Iter (f: 'a -> unit) = function
@@ -101,6 +109,19 @@ type Reader<'a> [<JavaScript>] (id) =
                 | Success x, l -> out.Trigger (Failure l)
                 | Failure l, l' -> out.Trigger (Failure (l @ l')))
         |> ignore
+        out :> Reader<'a>
+
+    [<JavaScript>]
+    static member Map (f: 'b -> 'a) (r: Reader<'b>) : Reader<'a> =
+        let out = Stream<'a>(Result.Map f r.Latest)
+        r.Subscribe(out.Trigger << Result.Map f) |> ignore
+        out :> Reader<'a>
+
+    [<JavaScript>]
+    static member Map2 (f: 'b -> 'c -> 'a) (rb: Reader<'b>) (rc: Reader<'c>) : Reader<'a> =
+        let out = Stream<'a>(Result.Map2 f rb.Latest rc.Latest)
+        rb.Subscribe(fun b -> out.Trigger(Result.Map2 f b rc.Latest)) |> ignore
+        rc.Subscribe(fun c -> out.Trigger(Result.Map2 f rb.Latest c)) |> ignore
         out :> Reader<'a>
 
 and [<Interface>] Writer<'a> =
@@ -394,7 +415,7 @@ module Choose =
     type Stream<'o, 'i, 'u, 'v, 'w, 'x when 'i : equality>(chooser: Piglet<'i, 'u -> 'v>, choice: 'i -> Piglet<'o, 'w -> 'x>, out: Stream<'o>) =
         inherit Reader<'o>(out.Id)
 
-        let plStream = Stream<_>(Failure [])
+        let pStream = Stream<_>(Failure [])
 
         let choiceSubscriptions = Dictionary()
 
@@ -407,11 +428,11 @@ module Choose =
                         if choiceSubscriptions.ContainsKey i then
                             fst choiceSubscriptions.[i]
                         else
-                            let pl = choice i
+                            let p = choice i
                             choiceSubscriptions.[i] <-
-                                (pl, pl.stream.Subscribe out.Trigger)
-                            pl)
-                    |> plStream.Trigger)
+                                (p, p.stream.Subscribe out.Trigger)
+                            p)
+                    |> pStream.Trigger)
             ]
 
         override this.Latest = out.Latest
@@ -424,16 +445,16 @@ module Choose =
             let renders = Dictionary()
             let hasChild = ref false
             subscriptions :=
-                plStream.SubscribeImmediate (fun res ->
+                pStream.SubscribeImmediate (fun res ->
                     match res with
                     | Failure _ -> ()
-                    | Success (i, pl) ->
+                    | Success (i, p) ->
                         let render =
                             if renders.ContainsKey i then
                                 renders.[i]
                             else
-                                pl.view f
-                        out.Trigger pl.stream.Latest
+                                p.view f
+                        out.Trigger p.stream.Latest
                         if !hasChild then c.Remove 0
                         hasChild := true
                         c.Add render)
@@ -481,11 +502,11 @@ module Piglet =
         }
 
     [<JavaScript>]
-    let WithSubmit fin =
-        let submitter = Submitter(fin.stream)
+    let WithSubmit pin =
+        let submitter = Submitter(pin.stream)
         {
             stream = submitter.Output
-            view = fin.view <<^ submitter
+            view = pin.view <<^ submitter
         }
 
     [<JavaScript>]
@@ -500,7 +521,7 @@ module Piglet =
     [<JavaScript>]
     let ManyPiglet (inits : 'a[]) (create : Piglet<'a,'y->'z>) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.Stream<'a, 'v, 'w,'y,'z> -> 'x) -> 'x> =
         let s = Stream (Success inits)
-        let m = Many.Stream<'a,'v,'w,'y,'z>(p,s,create)
+        let m = Many.Stream<'a,'v,'w,'y,'z>(p, s, create)
         {
             stream = s
             view = fun f -> f m
@@ -522,75 +543,75 @@ module Piglet =
         ManyInit [|init|] init p
 
     [<JavaScript>]
-    let TransmitStream f =
+    let TransmitStream p =
         {
-            stream = f.stream
-            view = f.view <<^ f.stream
+            stream = p.stream
+            view = p.view <<^ p.stream
         }
 
     [<JavaScript>]
-    let TransmitReader f =
+    let TransmitReader p =
         {
-            stream = f.stream
-            view = f.view <<^ (f.stream :> Reader<_>)
+            stream = p.stream
+            view = p.view <<^ (p.stream :> Reader<_>)
         }
 
     [<JavaScript>]
-    let TransmitWriter f =
+    let TransmitWriter p =
         {
-            stream = f.stream
-            view = f.view <<^ (f.stream :> Writer<_>)
+            stream = p.stream
+            view = p.view <<^ (p.stream :> Writer<_>)
         }
 
     [<JavaScript>]
-    let MapResult m f =
-        let out = Stream(m f.stream.Latest)
-        f.stream.Subscribe(out.Trigger << m) |> ignore
+    let MapResult m p =
+        let out = Stream(m p.stream.Latest)
+        p.stream.Subscribe(out.Trigger << m) |> ignore
         {
             stream = out
-            view = f.view
+            view = p.view
         }
 
     [<JavaScript>]
-    let MapToResult m f =
-        f |> MapResult (function
+    let MapToResult m p =
+        p |> MapResult (function
             | Failure msg -> Failure msg
             | Success x -> m x)
 
     [<JavaScript>]
-    let Map m f =
-        f |> MapResult (function
+    let Map m p =
+        p |> MapResult (function
             | Failure msg -> Failure msg
             | Success x -> Success (m x))
 
     [<JavaScript>]
-    let MapAsyncResult m f =
+    let MapAsyncResult m p =
         let out = Stream (Failure [])
-        f.stream.Subscribe (fun v ->
+        p.stream.Subscribe (fun v ->
             async {
                 let! res = m v
                 return out.Trigger res
             } |> Async.Start)
         |> ignore
         async {
-            let! res = m f.stream.Latest
+            let! res = m p.stream.Latest
             return out.Trigger res
         }
         |> Async.Start
         {
             stream = out
-            view = f.view
+            view = p.view
         }
 
     [<JavaScript>]
-    let MapToAsyncResult m f =
-        f |> MapAsyncResult (function
+    let MapToAsyncResult m p =
+        p |> MapAsyncResult (function
             | Failure msg -> async.Return (Failure msg)
             | Success x -> m x)
 
     [<JavaScript>]
-    let MapAsync m f =
-        f |> MapAsyncResult (function
+    let MapAsync m p =
+        p |> MapAsyncResult (function
             | Failure msg -> async.Return (Failure msg)
             | Success x ->
                 async {
@@ -613,14 +634,14 @@ module Piglet =
         RunResult (Result.Iter action) p
 
     [<JavaScript>]
-    let Render view f =
-        f.view view
+    let Render view p =
+        p.view view
 
     [<JavaScript>]
-    let MapViewArgs view f =
+    let MapViewArgs view p =
         {
-            stream = f.stream
-            view = f.view >>^ view
+            stream = p.stream
+            view = p.view >>^ view
         }
 
     [<JavaScript>]
@@ -636,26 +657,26 @@ module Piglet =
         open IntelliFactory.WebSharper.EcmaScript
 
         [<JavaScript>]
-        let Is' pred msg f =
-            let s' = Stream(f.stream.Latest, f.stream.Id)
-            f.stream.Subscribe(function
+        let Is' pred msg p =
+            let s' = Stream(p.stream.Latest, p.stream.Id)
+            p.stream.Subscribe(function
                 | Failure m -> s'.Trigger (Failure m)
                 | Success x when pred x -> s'.Trigger (Success x)
                 | _ -> s'.Trigger (Failure [msg]))
             |> ignore
-            { f with
+            { p with
                 stream = s'
             }
 
         [<JavaScript>]
-        let Is pred msg f =
-            let s' = Stream(f.stream.Latest, f.stream.Id)
-            f.stream.Subscribe(function
+        let Is pred msg p =
+            let s' = Stream(p.stream.Latest, p.stream.Id)
+            p.stream.Subscribe(function
                 | Failure m -> s'.Trigger (Failure m)
                 | Success x when pred x -> s'.Trigger (Success x)
                 | _ -> s'.Trigger (Failure [ErrorMessage(msg, s'.Id)]))
             |> ignore
-            { f with
+            { p with
                 stream = s'
             }
 
@@ -680,14 +701,14 @@ module Piglet =
     type Builder =
         | Do
 
-        member this.Bind(pl, f) = Choose pl f
+        member this.Bind(p, f) = Choose p f
 
         member this.Return x = Return x
 
-        member this.ReturnFrom (pl: Piglet<_, _>) = pl
+        member this.ReturnFrom (p: Piglet<_, _>) = p
 
         member this.Yield x = Yield x
 
-        member this.YieldFrom (pl: Piglet<_, _>) = pl
+        member this.YieldFrom (p: Piglet<_, _>) = p
 
         member this.Zero() = ReturnFailure()

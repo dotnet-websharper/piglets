@@ -33,6 +33,8 @@ type Result<'a> =
 
     static member Failwith : string -> Result<'a>
     member isSuccess : bool
+    static member Map : ('a -> 'b) -> Result<'a> -> Result<'b>
+    static member Map2 : ('a -> 'b -> 'c) -> Result<'a> -> Result<'b> -> Result<'c>
 
 [<AbstractClass>]
 type Reader<'a> =
@@ -40,6 +42,8 @@ type Reader<'a> =
     abstract member Subscribe : (Result<'a> -> unit) -> IDisposable
     member SubscribeImmediate : (Result<'a> -> unit) -> IDisposable
     member Through : Reader<'b> -> Reader<'a>
+    static member Map : ('b -> 'a) -> Reader<'b> -> Reader<'a>
+    static member Map2 : ('b -> 'c -> 'a) -> Reader<'b> -> Reader<'c> -> Reader<'a>
 
 type ErrorMessage with
     /// Create an error message associated with the given reader.
