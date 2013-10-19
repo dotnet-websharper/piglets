@@ -40,6 +40,7 @@ type Reader<'a> =
     abstract member Subscribe : (Result<'a> -> unit) -> IDisposable
     member SubscribeImmediate : (Result<'a> -> unit) -> IDisposable
     member Through : Reader<'b> -> Reader<'a>
+    interface IObservable<Result<'a>>
 
 type ErrorMessage with
     /// Create an error message associated with the given reader.
@@ -98,7 +99,7 @@ module Many =
         member MoveDown : Submitter<unit>
 
     [<Class>]
-    type Stream<'a, 'v, 'w,'y,'z> =
+    type Stream<'a, 'v, 'w,'y,'z> =                
         inherit Reader<'a[]>
 
         ///Render the element collection inside this Piglet inside the given container and with the provided rendering function
