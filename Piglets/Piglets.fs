@@ -80,6 +80,8 @@ type Result<'a> =
 [<AbstractClass>]
 type Reader<'a> [<JavaScript>] (id) =
     abstract member Latest : Result<'a>
+    
+    [<Name("SubscribeToReader")>]
     abstract member Subscribe : (Result<'a> -> unit) -> IDisposable
 
     [<JavaScript>]
@@ -103,6 +105,10 @@ type Reader<'a> [<JavaScript>] (id) =
         |> ignore
         out :> Reader<'a>
 
+    interface IObservable<Result<'a>> with
+        [<JavaScript>]
+        member this.Subscribe observer = this.Subscribe observer.OnNext
+
 and [<Interface>] Writer<'a> =
     abstract member Trigger : Result<'a> -> unit
 
@@ -115,6 +121,7 @@ and [<Sealed>] Stream<'a> [<JavaScript>] (init: Result<'a>, ?id) =
         (!s.Latest).Value
 
     [<JavaScript>]
+    [<Name "SubscribeToReader">]
     override this.Subscribe f =
         s.Subscribe f
 
@@ -154,6 +161,7 @@ type ConcreteReader<'a> [<JavaScript>] (latest, subscribe) =
     [<JavaScript>]
     override this.Latest = latest()
     [<JavaScript>]
+    [<Name "SubscribeToReader">]
     override this.Subscribe f = subscribe f
 
 [<Sealed>]
@@ -184,7 +192,10 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
         [<JavaScript>] member this.Trigger(x) = writer.Trigger(x)
 
     [<JavaScript>] override this.Latest = output.Latest
-    [<JavaScript>] override this.Subscribe f = output.Subscribe f
+    
+    [<Name "SubscribeToReader">]
+    [<JavaScript>]
+    override this.Subscribe f = output.Subscribe f
 
 module private Stream =
 
@@ -287,6 +298,7 @@ module Many =
             ) |> ignore
 
 
+        [<Name "SubscribeToReader">]
         override this.Subscribe f = out.Subscribe f
 
         override this.Latest = out.Latest

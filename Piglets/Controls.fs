@@ -194,7 +194,7 @@ let EnableOnSuccess (reader: Reader<'a>) (element: Element) =
     element
     |>! OnAfterRender (fun el ->
         el.Body?disabled <- not reader.Latest.isSuccess
-        reader.Subscribe(fun x -> el.Body?disabled <- not x.isSuccess)
+        reader.Subscribe <| fun (x:Result<'a>) -> el.Body?disabled <- not x.isSuccess
         |> ignore)
 
 [<JavaScript>]
