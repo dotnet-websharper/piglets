@@ -35,6 +35,7 @@ type Result<'a> =
     member isSuccess : bool
     static member Map : ('a -> 'b) -> Result<'a> -> Result<'b>
     static member Map2 : ('a -> 'b -> 'c) -> Result<'a> -> Result<'b> -> Result<'c>
+    static member Bind : ('a -> Result<'b>) -> (Result<'a> -> Result<'b>)
 
 [<AbstractClass>]
 type Reader<'a> =
@@ -44,6 +45,9 @@ type Reader<'a> =
     member Through : Reader<'b> -> Reader<'a>
     static member Map : ('b -> 'a) -> Reader<'b> -> Reader<'a>
     static member Map2 : ('b -> 'c -> 'a) -> Reader<'b> -> Reader<'c> -> Reader<'a>
+    static member MapToResult : ('b -> Result<'a>) -> Reader<'b> -> Reader<'a>
+    static member MapResult : (Result<'b> -> Result<'a>) -> Reader<'b> -> Reader<'a>
+    static member MapResult2 : (Result<'b> -> Result<'c> -> Result<'a>) -> Reader<'b> -> Reader<'c> -> Reader<'a>
 
 type ErrorMessage with
     /// Create an error message associated with the given reader.
@@ -180,6 +184,15 @@ module Piglet =
 
     /// Pass a reader for this Piglet's stream to the view.
     val TransmitReader : Piglet<'a, 'b -> Reader<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
+
+    /// Pass a mapped reader for this Piglet's stream to the view.
+    val TransmitReaderMap : ('a -> 'd) -> Piglet<'a, 'b -> Reader<'d> -> 'c> -> Piglet<'a, 'b -> 'c>
+
+    /// Pass a mapped reader for this Piglet's stream to the view.
+    val TransmitReaderMapResult : (Result<'a> -> Result<'d>) -> Piglet<'a, 'b -> Reader<'d> -> 'c> -> Piglet<'a, 'b -> 'c>
+
+    /// Pass a mapped reader for this Piglet's stream to the view.
+    val TransmitReaderMapToResult : ('a -> Result<'d>) -> Piglet<'a, 'b -> Reader<'d> -> 'c> -> Piglet<'a, 'b -> 'c>
 
     /// Pass a writer for this Piglet's stream to the view.
     val TransmitWriter : Piglet<'a, 'b -> Writer<'a> -> 'c> -> Piglet<'a, 'b -> 'c>

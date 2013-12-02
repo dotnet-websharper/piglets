@@ -85,6 +85,11 @@ type Result<'a> =
         | Success x -> f x
         | Failure _ -> ()
 
+    [<JavaScript>]
+    static member Bind (f: 'a -> Result<'b>) = function
+        | Success x -> f x
+        | Failure m -> Failure m
+
 [<AbstractClass>]
 type Reader<'a> [<JavaScript>] (id) =
     abstract member Latest : Result<'a>
@@ -112,17 +117,29 @@ type Reader<'a> [<JavaScript>] (id) =
         out :> Reader<'a>
 
     [<JavaScript>]
-    static member Map (f: 'b -> 'a) (r: Reader<'b>) : Reader<'a> =
-        let out = Stream<'a>(Result.Map f r.Latest)
-        r.Subscribe(out.Trigger << Result.Map f) |> ignore
+    static member MapResult (f: Result<'b> -> Result<'a>) (r: Reader<'b>) : Reader<'a> =
+        let out = Stream<'a>(f r.Latest)
+        r.Subscribe(out.Trigger << f) |> ignore
         out :> Reader<'a>
 
     [<JavaScript>]
-    static member Map2 (f: 'b -> 'c -> 'a) (rb: Reader<'b>) (rc: Reader<'c>) : Reader<'a> =
-        let out = Stream<'a>(Result.Map2 f rb.Latest rc.Latest)
-        rb.Subscribe(fun b -> out.Trigger(Result.Map2 f b rc.Latest)) |> ignore
-        rc.Subscribe(fun c -> out.Trigger(Result.Map2 f rb.Latest c)) |> ignore
+    static member MapResult2 (f: Result<'b> -> Result<'c> -> Result<'a>) (rb: Reader<'b>) (rc: Reader<'c>) : Reader<'a> =
+        let out = Stream<'a>(f rb.Latest rc.Latest)
+        rb.Subscribe(fun b -> out.Trigger(f b rc.Latest)) |> ignore
+        rc.Subscribe(fun c -> out.Trigger(f rb.Latest c)) |> ignore
         out :> Reader<'a>
+
+    [<JavaScript>]
+    static member Map (f: 'b -> 'a) (r: Reader<'b>) : Reader<'a> =
+        Reader.MapResult (Result.Map f) r
+
+    [<JavaScript>]
+    static member Map2 (f: 'b -> 'c -> 'a) (rb: Reader<'b>) (rc: Reader<'c>) : Reader<'a> =
+        Reader.MapResult2 (fun b c -> Result.Map2 f b c) rb rc
+
+    [<JavaScript>]
+    static member MapToResult (f: 'b -> Result<'a>) (r: Reader<'b>) : Reader<'a> =
+        Reader.MapResult (Result.Bind f) r
 
 and [<Interface>] Writer<'a> =
     abstract member Trigger : Result<'a> -> unit
@@ -547,6 +564,27 @@ module Piglet =
         {
             stream = p.stream
             view = p.view <<^ p.stream
+        }
+
+    [<JavaScript>]
+    let TransmitReaderMapResult f p =
+        {
+            stream = p.stream
+            view = p.view <<^ Reader.MapResult f p.stream
+        }
+
+    [<JavaScript>]
+    let TransmitReaderMapToResult f p =
+        {
+            stream = p.stream
+            view = p.view <<^ Reader.MapToResult f p.stream
+        }
+
+    [<JavaScript>]
+    let TransmitReaderMap f p =
+        {
+            stream = p.stream
+            view = p.view <<^ Reader.Map f p.stream
         }
 
     [<JavaScript>]
