@@ -325,8 +325,6 @@ module Many =
 
         inherit Reader<'a[]>(out.Id)
 
-        let addStream = Stream<_>(Failure [])
-
         let streams = ResizeArray<Stream<'a>>()
 
         let update() =
@@ -340,12 +338,6 @@ module Many =
                 streams
             |> Result.Map (List.rev >> Array.ofList)
             |> out.Trigger
-
-        do
-            adder.stream.Subscribe(
-                function Success v -> Success v |> addStream.Trigger
-                        | Failure _ -> ()
-            ) |> ignore
 
 
         override this.Subscribe f = out.Subscribe f
@@ -397,13 +389,13 @@ module Many =
             match out.Latest with
             | Failure _ -> ()
             | Success xs -> Array.iter add xs
-            addStream.Subscribe(function
+            adder.stream.Subscribe(function
                 | Failure _ -> ()
                 | Success init -> add init)
             |> ignore
             c.Container
 
-        member this.Add = addStream :> Writer<'a>
+        member this.Add = adder.stream :> Writer<'a>
 
         member this.AddRender f = adder.view f
 
