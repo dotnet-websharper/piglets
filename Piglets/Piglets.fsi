@@ -179,6 +179,12 @@ module Piglet =
     /// The signaling function is passed to the view.
     val WithSubmit : Piglet<'a, 'b -> Submitter<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
 
+    /// Create a Piglet value that streams the value every time it receives a signal.
+    /// The signaling function is passed to the view.
+    /// Any update to the input Piglet passes `Failure []` to the output.
+    /// This is useful to clear error messages from a previous submission.
+    val WithSubmitClearError : Piglet<'a, 'b -> Submitter<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
+
     /// Pass this Piglet's stream to the view.
     val TransmitStream : Piglet<'a, 'b -> Stream<'a> -> 'c> -> Piglet<'a, 'b -> 'c>
 

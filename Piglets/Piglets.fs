@@ -203,7 +203,7 @@ type ConcreteReader<'a> [<JavaScript>] (latest, subscribe) =
     override this.Subscribe f = subscribe f
 
 [<Sealed>]
-type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
+type Submitter<'a> [<JavaScript>] (input: Reader<'a>, clearError: bool) =
     inherit Reader<'a>(Id.next())
 
     let output = Stream(Failure [])
@@ -216,6 +216,11 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>) =
             | Success _, Failure m -> output.Trigger(Failure m)
             | Success(), Success x -> output.Trigger(Success x))
         :> Writer<unit>
+
+    do
+        if clearError then
+            input.Subscribe (function _ -> output.Trigger (Failure []))
+            |> ignore
 
     [<JavaScript>]
     member this.Input = input
@@ -313,14 +318,6 @@ module Many =
         member this.MoveUp = moveUp
         member this.MoveDown = moveDown
 
-    [<JavaScript>]
-    let WithSubmit fin =
-        let submitter = Submitter(fin.stream)
-        {
-            stream = submitter.Output
-            view = fin.view <<^ submitter
-        }
-
     type Stream<'a, 'v, 'w, 'y,'z>(p : 'a -> Piglet<'a, 'v -> 'w>, out: Stream<'a[]>,adder : Piglet<'a,'y -> 'z>) =
 
         inherit Reader<'a[]>(out.Id)
@@ -371,8 +368,8 @@ module Many =
                     out.Subscribe(fun _ ->
                         inMoveUp.Trigger(canMoveUp())
                         inMoveDown.Trigger(canMoveDown()))
-                let subMoveUp = Submitter(inMoveUp)
-                let subMoveDown = Submitter(inMoveDown)
+                let subMoveUp = Submitter(inMoveUp, clearError = false)
+                let subMoveDown = Submitter(inMoveDown, clearError = false)
                 let subUpSubscription =
                     subMoveUp.Subscribe(Result.Iter moveUp)
                 let subDownSubscription =
@@ -512,7 +509,15 @@ module Piglet =
 
     [<JavaScript>]
     let WithSubmit pin =
-        let submitter = Submitter(pin.stream)
+        let submitter = Submitter(pin.stream, clearError = false)
+        {
+            stream = submitter.Output
+            view = pin.view <<^ submitter
+        }
+
+    [<JavaScript>]
+    let WithSubmitClearError pin =
+        let submitter = Submitter(pin.stream, clearError = true)
         {
             stream = submitter.Output
             view = pin.view <<^ submitter
