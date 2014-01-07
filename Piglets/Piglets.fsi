@@ -142,6 +142,9 @@ module Choose =
         /// Render the Piglet that allows the user to choose between different options.
         member Chooser : 'u -> 'v
 
+        /// Get the stream of the Piglet that allows the user to choose between different options.
+        member ChooserStream : Stream<'i>
+
         /// Render the Piglet that allows the user to choose the value for the selected option.
         member Choice : Container<'x, 'y> -> 'w -> 'y
 

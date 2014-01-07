@@ -447,6 +447,8 @@ module Choose =
         member this.Chooser (f: 'u) : 'v =
             chooser.view f
 
+        member this.ChooserStream = chooser.stream
+
         member this.Choice (c: Container<'x, 'y>) (f: 'w) : 'y =
             let renders = Dictionary()
             let hasChild = ref false
