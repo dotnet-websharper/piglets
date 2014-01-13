@@ -657,6 +657,23 @@ module Piglet =
                 })
 
     [<JavaScript>]
+    let MapResultWithWriter f (p: Piglet<_, _>) =
+        let stream = Stream(Failure [])
+        p.stream.SubscribeImmediate(f (stream :> Writer<_>)) |> ignore
+        {
+            stream = stream
+            view = p.view
+        }
+
+    [<JavaScript>]
+    let MapWithWriter f (p: Piglet<_, _>) =
+        let f' (out: Writer<_>) r =
+            match r with
+            | Failure msgs -> out.Trigger (Failure msgs)
+            | Success x -> f out x
+        MapResultWithWriter f' p
+
+    [<JavaScript>]
     let FlushErrors p =
         MapResult (function Failure _ -> Failure [] | x -> x) p
 

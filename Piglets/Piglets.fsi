@@ -224,6 +224,14 @@ module Piglet =
     /// Map the Result of a Piglet, without changing its view.
     val MapAsyncResult : (Result<'a> -> Async<Result<'b>>) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
 
+    /// Map the value of a Piglet, without changing its view.
+    /// The function can write directly into the output, zero, one or many times.
+    val MapWithWriter : (Writer<'b> -> 'a -> unit) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+
+    /// Map the Result of a Piglet, without changing its view.
+    /// The function can write directly into the output, zero, one or many times.
+    val MapResultWithWriter : (Writer<'b> -> Result<'a> -> unit) -> Piglet<'a, 'v> -> Piglet<'b, 'v>
+
     /// Flush error messages, replacing any failing state with a message-less failing state.
     val FlushErrors : Piglet<'a, 'v> -> Piglet<'a, 'v>
 
