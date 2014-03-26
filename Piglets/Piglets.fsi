@@ -41,6 +41,7 @@ type Result<'a> =
 type Reader<'a> =
     abstract member Latest : Result<'a>
     abstract member Subscribe : (Result<'a> -> unit) -> IDisposable
+    member Id : ErrorSourceId
     member SubscribeImmediate : (Result<'a> -> unit) -> IDisposable
     member Through : Reader<'b> -> Reader<'a>
     static member Map : ('b -> 'a) -> Reader<'b> -> Reader<'a>
