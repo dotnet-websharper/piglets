@@ -67,6 +67,7 @@ type Stream<'a> =
     member Trigger : Result<'a> -> unit
     /// Return a new Writer that sends x to this when triggered.
     member Write : x: 'a -> Writer<unit>
+    new : init: Result<'a> * ?id: ErrorSourceId -> Stream<'a>
 
 [<Sealed>]
 [<Class>]
