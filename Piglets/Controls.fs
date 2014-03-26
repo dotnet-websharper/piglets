@@ -39,7 +39,9 @@ let input ``type`` ofString toString (stream: Stream<'a>) =
             if i.Value <> s then i.Value <- s
         | Failure _ -> ())
     |> ignore
-    let ev (_: Dom.Event) = stream.Trigger(Success (ofString i.Value))
+    let ev (_: Dom.Event) =
+        let v = Success (ofString i.Value)
+        if v <> stream.Latest then stream.Trigger v
     i.Body.AddEventListener("keyup", ev, true)
     i.Body.AddEventListener("change", ev, true)
     i
@@ -165,7 +167,7 @@ type HtmlContainer (container: Element) =
         member this.Container = container
 
 [<JavaScript>]
-let RenderMany (many: Many.UnitStream<_,_,_>) renderOne container =
+let RenderMany (many: Many.Stream<_,_,_,_,_>) renderOne container =
     many.Render (HtmlContainer container) renderOne
 
 [<JavaScript>]
