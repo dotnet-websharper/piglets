@@ -152,6 +152,9 @@ module Choose =
 
 module Piglet =
 
+    /// Create a Piglet from a stream and a view.
+    val Create : Stream<'a> -> 'v -> Piglet<'a, 'v>
+
     /// Create a Piglet initialized with x that passes its stream to the view.
     val Yield : 'a -> Piglet<'a, (Stream<'a> -> 'b) -> 'b>
 

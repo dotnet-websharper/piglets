@@ -479,6 +479,13 @@ module Choose =
 
 module Piglet =
 
+    [<JavaScript; Inline>]
+    let Create s v =
+        {
+            stream = s
+            view = v
+        }
+
     [<JavaScript>]
     let Yield (x: 'a) =
         let s = Stream(Success x)
