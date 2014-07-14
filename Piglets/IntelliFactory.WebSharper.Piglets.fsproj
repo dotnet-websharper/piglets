@@ -6,6 +6,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{ab53bb7f-fbe4-4f4d-a817-7a7f20f2b06f}</ProjectGuid>
     <Name>IntelliFactory.WebSharper.Piglets</Name>
+    <OutputType>Library</OutputType>
     <OutputPath>../build/net45</OutputPath>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
@@ -31,6 +32,4 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <Import Project="..\build\net45\$(Name).proj" />
-  <Target Name="Build" />
-  <Target Name="Clean" />
 </Project>

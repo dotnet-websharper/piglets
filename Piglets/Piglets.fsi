@@ -49,6 +49,8 @@ type Reader<'a> =
     static member MapToResult : ('b -> Result<'a>) -> Reader<'b> -> Reader<'a>
     static member MapResult : (Result<'b> -> Result<'a>) -> Reader<'b> -> Reader<'a>
     static member MapResult2 : (Result<'b> -> Result<'c> -> Result<'a>) -> Reader<'b> -> Reader<'c> -> Reader<'a>
+    static member Const : 'a -> Reader<'a>
+    static member ConstResult : Result<'a> -> Reader<'a>
 
 type ErrorMessage with
     /// Create an error message associated with the given reader.

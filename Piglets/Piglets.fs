@@ -163,6 +163,23 @@ and [<Sealed>] Stream<'a> [<JavaScript>] (init: Result<'a>, ?id) =
     interface Writer<'a> with
         [<JavaScript>] member this.Trigger x = this.Trigger x
 
+[<JavaScript>]
+type Disposable(dispose) =
+    interface IDisposable with
+        member this.Dispose() = dispose()
+
+[<JavaScript>]
+type ConstReader<'a>(x: Result<'a>) =
+    inherit Reader<'a>(Id.next())
+    override this.Latest = x
+    override this.Subscribe f = new Disposable(ignore) :> IDisposable
+
+type Reader<'a> with
+    [<JavaScript>]
+    static member Const x = ConstReader(Result.Success x) :> Reader<'a>
+    [<JavaScript>]
+    static member ConstResult x = ConstReader(x) :> Reader<'a>
+
 type ErrorMessage with
     [<JavaScript>]
     static member Create msg (reader: Reader<'a>) =
