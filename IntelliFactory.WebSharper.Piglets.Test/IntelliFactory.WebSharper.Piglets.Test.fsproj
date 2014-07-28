@@ -26,5 +26,5 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
-  <Import Project="..\build\net45\$(Name).proj" />
+  <Import Project="..\build\net40\$(Name).proj" />
 </Project>
