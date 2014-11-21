@@ -237,8 +237,8 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>, clearError: bool) =
     do
         if clearError then
             input.Subscribe (fun inp ->
-                match inp, output.Latest with
-                | Failure [], Failure [] -> ()
+                match output.Latest with
+                | Failure [] -> ()
                 | _ -> output.Trigger (Failure []))
             |> ignore
 
