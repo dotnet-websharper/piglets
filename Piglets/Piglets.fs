@@ -144,9 +144,12 @@ type Reader<'a> [<JavaScript>] (id) =
 and [<Interface>] Writer<'a> =
     abstract member Trigger : Result<'a> -> unit
 
-and [<Sealed>] Stream<'a> [<JavaScript>] (init: Result<'a>, ?id) =
+and [<Sealed>] Stream<'a> [<JavaScript>] (s: IntelliFactory.Reactive.HotStream<Result<'a>>, ?id) =
     inherit Reader<'a>(match id with Some id -> id | None -> Id.next())
-    let s = IntelliFactory.Reactive.HotStream.New init
+
+    [<JavaScript>]
+    new(init, ?id) =
+        Stream<_>(IntelliFactory.Reactive.HotStream.New init, ?id = id)
 
     [<JavaScript>]
     override this.Latest =
@@ -629,7 +632,7 @@ module Piglet =
 
     [<JavaScript>]
     let MapResult m p =
-        let out = Stream(m p.stream.Latest)
+        let out = Stream(m p.stream.Latest : Result<_>)
         p.stream.Subscribe(out.Trigger << m) |> ignore
         {
             stream = out

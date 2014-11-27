@@ -18,6 +18,7 @@
 namespace IntelliFactory.WebSharper.Piglets
 
 open System
+open IntelliFactory.Reactive
 
 type ErrorSourceId = int
 
@@ -71,6 +72,7 @@ type Stream<'a> =
     /// Return a new Writer that sends x to this when triggered.
     member Write : x: 'a -> Writer<unit>
     new : init: Result<'a> * ?id: ErrorSourceId -> Stream<'a>
+    new : HotStream<Result<'a>> * ?id: ErrorSourceId -> Stream<'a>
 
 [<Sealed>]
 [<Class>]
