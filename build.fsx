@@ -3,7 +3,7 @@
 open IntelliFactory.Build
 
 let bt =
-    BuildTool().PackageId("WebSharper.Piglets", "0.1")
+    BuildTool().PackageId("WebSharper.Piglets", "3.0-alpha")
         .References(fun r ->
             [
                 r.Assembly("System.Web")
