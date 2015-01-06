@@ -17,7 +17,7 @@
 
 module IntelliFactory.WebSharper.Piglets.Controls
 
-open IntelliFactory.WebSharper.Html
+open IntelliFactory.WebSharper.Html.Client
 
 
 /// A label for a given element.
@@ -64,14 +64,14 @@ val RenderChoice :
 /// Display a reactive value.
 val ShowResult :
     reader: Reader<'a> ->
-    render: (Result<'a> -> #seq<#IPagelet>) ->
+    render: (Result<'a> -> #seq<#Pagelet>) ->
     container: Element ->
     Element
 
 /// Display a reactive value, or nothing if it is invalid.
 val Show :
     reader: Reader<'a> ->
-    render: ('a -> #seq<#IPagelet>) ->
+    render: ('a -> #seq<#Pagelet>) ->
     container: Element ->
     Element
 
@@ -85,7 +85,7 @@ val ShowString :
 /// Display errors, if any.
 val ShowErrors :
     reader: Reader<'a> ->
-    render: (string list -> #seq<#IPagelet>) ->
+    render: (string list -> #seq<#Pagelet>) ->
     container: Element ->
     Element
 

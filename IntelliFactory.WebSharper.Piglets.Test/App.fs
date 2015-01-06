@@ -18,6 +18,7 @@
 module App
 
 open IntelliFactory.WebSharper
+open IntelliFactory.WebSharper.JavaScript
 open IntelliFactory.WebSharper.Piglets
 
 module Model =
@@ -120,12 +121,12 @@ module ViewModel =
         |> Piglet.TransmitReader
         |> Piglet.WithSubmit
         |> Piglet.Run (fun u ->
-            JavaScript.Alert (Model.User.Pretty u))
+            JS.Alert (Model.User.Pretty u))
 
 module View =
 
     open Model
-    open IntelliFactory.WebSharper.Html
+    open IntelliFactory.WebSharper.Html.Client
     module C = IntelliFactory.WebSharper.Piglets.Controls
 
     [<JavaScript>]

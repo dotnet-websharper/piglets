@@ -18,7 +18,8 @@
 module IntelliFactory.WebSharper.Piglets.Controls
 
 open IntelliFactory.WebSharper
-open IntelliFactory.WebSharper.Html
+open IntelliFactory.WebSharper.JavaScript
+open IntelliFactory.WebSharper.Html.Client
 
 [<JavaScript>]
 let nextId =
@@ -109,7 +110,7 @@ let Radio (stream: Stream<'a>) (values: seq<'a * string>) =
     let elts = values |> List.map (fun (x, label) ->
         let id = nextId()
         let input =
-            Html.Default.Input [Attr.Type "radio"; Attr.Name name; Attr.Id id]
+            Default.Input [Attr.Type "radio"; Attr.Name name; Attr.Id id]
             |>! OnChange (fun div ->
                 if div.Body?``checked`` then
                     stream.Trigger(Success x))
@@ -133,7 +134,7 @@ let Select (stream: Stream<'a>) (values: seq<'a * string>) =
     let values = Array.ofSeq values
     let elts = values |> Array.map (fun (x, label) ->
         let id = nextId()
-        Html.Default.Tags.Option [Attr.Value id] -< [Text label])
+        Default.Tags.Option [Attr.Value id] -< [Text label])
     Select elts
     |>! OnChange (fun e ->
         if e.Body?selectedIndex >= 0 then
@@ -180,21 +181,21 @@ let Container c = HtmlContainer(c) :> Container<_,_>
 [<JavaScript>]
 let ShowResult
         (reader: Reader<'a>)
-        (render: Result<'a> -> #seq<#IPagelet>)
+        (render: Result<'a> -> #seq<#Pagelet>)
         (container: Element) =
     for e in render reader.Latest do
-        container.Append (e :> IPagelet)
+        container.Append (e :> Pagelet)
     reader.Subscribe(fun x ->
         container.Clear()
         for e in render x do
-            container.Append(e :> IPagelet))
+            container.Append(e :> Pagelet))
     |> ignore
     container
 
 [<JavaScript>]
 let Show
         (reader: Reader<'a>)
-        (render: 'a -> #seq<#IPagelet>)
+        (render: 'a -> #seq<#Pagelet>)
         (container: Element) =
     let render = function
         | Success x -> render x :> seq<_>
@@ -208,7 +209,7 @@ let ShowString reader render container =
 [<JavaScript>]
 let ShowErrors
         (reader: Reader<'a>)
-        (render: string list -> #seq<#IPagelet>)
+        (render: string list -> #seq<#Pagelet>)
         (container: Element) =
     let render = function
         | Success (x: 'a) -> Seq.empty

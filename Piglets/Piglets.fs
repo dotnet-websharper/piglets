@@ -19,6 +19,7 @@ namespace IntelliFactory.WebSharper.Piglets
 
 open System
 open IntelliFactory.WebSharper
+open IntelliFactory.WebSharper.JavaScript
 
 module Id =
 
@@ -737,8 +738,6 @@ module Piglet =
                 (fun x -> if x = none then None else Some x))
 
     module Validation =
-
-        open IntelliFactory.WebSharper.EcmaScript
 
         [<JavaScript>]
         let Is' pred msg p =
