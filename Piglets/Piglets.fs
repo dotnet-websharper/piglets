@@ -304,6 +304,11 @@ type Piglet<'a, 'v> =
 [<AutoOpen>]
 module Pervasives =
 
+    type Writer<'a> with
+        [<JavaScript>]
+        static member Wrap (f: 'b -> 'a) (r: Writer<'a>) =
+            new ConcreteWriter<'b>(fun a -> r.Trigger(Result.Map f a)) :> Writer<'b>
+
     /// Push an argument to the view function.
     [<JavaScript>]
     [<Inline>]

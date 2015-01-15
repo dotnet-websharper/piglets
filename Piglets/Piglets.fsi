@@ -99,6 +99,9 @@ module Pervasives =
     /// Apply a Piglet function to a Piglet Result.
     val (<*?>) : Piglet<'a -> 'b, 'c -> 'd> -> Piglet<Result<'a>, 'd -> 'e> -> Piglet<'b, 'c -> 'e>
 
+    type Writer<'a> with
+        static member Wrap : ('b -> 'a) -> Writer<'a> -> Writer<'b>
+
 module Stream =
 
     val Map : ('a -> 'b) -> ('b -> 'a) -> Stream<'a> -> Stream<'b>
