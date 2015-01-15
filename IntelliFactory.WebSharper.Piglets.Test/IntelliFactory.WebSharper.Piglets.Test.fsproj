@@ -26,6 +26,5 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
-  <Import Project="../packages/WebSharper.2.5.119.54/build/WebSharper.targets" />
   <Import Project="..\build\net40\$(Name).proj" />
 </Project>
