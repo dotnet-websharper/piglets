@@ -12,13 +12,6 @@
     <Compile Include="App.fs" />
     <Compile Include="Site.fs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Piglets\IntelliFactory.WebSharper.Piglets.fsproj">
-      <Name>IntelliFactory.WebSharper.Piglets</Name>
-      <Project>{ab53bb7f-fbe4-4f4d-a817-7a7f20f2b06f}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '11.0'">
       <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
