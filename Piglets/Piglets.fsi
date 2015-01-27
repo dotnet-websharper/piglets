@@ -101,6 +101,11 @@ module Pervasives =
 
     type Writer<'a> with
         static member Wrap : ('b -> 'a) -> Writer<'a> -> Writer<'b>
+        static member WrapToResult : ('b -> Result<'a>) -> Writer<'a> -> Writer<'b>
+        static member WrapResult : (Result<'b> -> Result<'a>) -> Writer<'a> -> Writer<'b>
+        static member WrapAsync : ('b -> Async<'a>) -> Writer<'a> -> Writer<'b>
+        static member WrapToAsyncResult : ('b -> Async<Result<'a>>) -> Writer<'a> -> Writer<'b>
+        static member WrapAsyncResult : (Result<'b> -> Async<Result<'a>>) -> Writer<'a> -> Writer<'b>
 
 module Stream =
 

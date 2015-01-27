@@ -309,6 +309,39 @@ module Pervasives =
         static member Wrap (f: 'b -> 'a) (r: Writer<'a>) =
             new ConcreteWriter<'b>(fun a -> r.Trigger(Result.Map f a)) :> Writer<'b>
 
+        [<JavaScript>]
+        static member WrapToResult (f: 'b -> Result<'a>) (r: Writer<'a>) =
+            new ConcreteWriter<'b>(fun a -> r.Trigger(Result.Bind f a)) :> Writer<'b>
+
+        [<JavaScript>]
+        static member WrapResult (f: Result<'b> -> Result<'a>) (r: Writer<'a>) =
+            new ConcreteWriter<'b>(fun a -> r.Trigger(f a)) :> Writer<'b>
+
+        [<JavaScript>]
+        static member WrapAsyncResult (f: Result<'b> -> Async<Result<'a>>) (r: Writer<'a>) =
+            new ConcreteWriter<'b>(fun ra ->
+                async {
+                    let! mapped = f ra
+                    r.Trigger mapped
+                } |> Async.Start) :> Writer<'b>
+
+        [<JavaScript>]
+        static member WrapToAsyncResult (f: 'b -> Async<Result<'a>>) (r: Writer<'a>) =
+            r |> Writer.WrapAsyncResult (fun b ->
+                async {
+                    match b with
+                    | Success sb -> return! f sb
+                    | Failure f  -> return Failure f
+                })
+
+        [<JavaScript>]
+        static member WrapAsync (f: 'b -> Async<'a>) (r: Writer<'a>) =
+            r |> Writer.WrapToAsyncResult (fun b -> 
+                async {
+                    let! mapped = f b
+                    return Success mapped
+                })
+
     /// Push an argument to the view function.
     [<JavaScript>]
     [<Inline>]

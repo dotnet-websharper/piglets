@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{87297620-c340-470f-a347-21dfa030c502}</ProjectGuid>
@@ -12,7 +12,13 @@
     <Compile Include="App.fs" />
     <Compile Include="Site.fs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Piglets\IntelliFactory.WebSharper.Piglets.fsproj">
+      <Name>IntelliFactory.WebSharper.Piglets</Name>
+      <Project>{ab53bb7f-fbe4-4f4d-a817-7a7f20f2b06f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '11.0'">
       <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
