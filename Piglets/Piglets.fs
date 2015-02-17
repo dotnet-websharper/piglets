@@ -805,7 +805,7 @@ module Piglet =
         let NotEmpty x = x <> ""
 
         [<JavaScript>]
-        let Match re = (RegExp re).Test
+        let Match (re: string) = RegExp(re).Test : string -> bool
 
     [<JavaScript>]
     let Confirm init validate nomatch =
