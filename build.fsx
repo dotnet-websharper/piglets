@@ -11,35 +11,29 @@ let bt =
     |> fun bt -> bt.WithFramework(bt.Framework.Net40)
 
 let main =
-    bt.WebSharper.Library("IntelliFactory.WebSharper.Piglets")
-    |> FSharpConfig.BaseDir.Custom "Piglets"
-    |> fun proj ->
-        proj
-            .SourcesFromProject()
-            .References(fun r ->
-                [
-                    r.NuGet("WebSharper").Reference()
-                ])
-
-let test =
-    bt.WebSharper.Library("IntelliFactory.WebSharper.Piglets.Test")
+    bt.WebSharper.Library("WebSharper.Piglets")
         .SourcesFromProject()
         .References(fun r ->
             [
+                r.NuGet("IntelliFactory.Reactive").Reference()
+            ])
+
+let test =
+    bt.WebSharper.Library("WebSharper.Piglets.Test")
+        .SourcesFromProject()
+        .References(fun r ->
+            [
+                r.NuGet("IntelliFactory.Reactive").Reference()
                 r.Project(main)
             ])
 
 let web =
     bt.WebSharper.HostWebsite("Web")
         .References(fun r ->
-            let path =
-                [
-                    "tools/net45/IntelliFactory.Xml.dll"
-                ]
             [
+                r.NuGet("IntelliFactory.Reactive").Reference()
                 r.Project(main)
                 r.Project(test)
-                r.NuGet("WebSharper").At(path).Reference() // Looks like if.build bug?
             ])
 
 bt.Solution [

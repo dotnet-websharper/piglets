@@ -15,7 +15,7 @@
 //
 // $end{copyright}
 
-namespace IntelliFactory.WebSharper.Piglets
+namespace WebSharper.Piglets
 
 open System
 open IntelliFactory.Reactive

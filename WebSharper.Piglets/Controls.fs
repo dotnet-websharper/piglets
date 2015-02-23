@@ -15,11 +15,11 @@
 //
 // $end{copyright}
 
-module IntelliFactory.WebSharper.Piglets.Controls
+module WebSharper.Piglets.Controls
 
-open IntelliFactory.WebSharper
-open IntelliFactory.WebSharper.JavaScript
-open IntelliFactory.WebSharper.Html.Client
+open WebSharper
+open WebSharper.JavaScript
+open WebSharper.Html.Client
 
 [<JavaScript>]
 let nextId =

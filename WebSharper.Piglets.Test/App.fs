@@ -17,9 +17,9 @@
 
 module App
 
-open IntelliFactory.WebSharper
-open IntelliFactory.WebSharper.JavaScript
-open IntelliFactory.WebSharper.Piglets
+open WebSharper
+open WebSharper.JavaScript
+open WebSharper.Piglets
 
 module Model =
 
@@ -126,8 +126,8 @@ module ViewModel =
 module View =
 
     open Model
-    open IntelliFactory.WebSharper.Html.Client
-    module C = IntelliFactory.WebSharper.Piglets.Controls
+    open WebSharper.Html.Client
+    module C = WebSharper.Piglets.Controls
 
     [<JavaScript>]
     let RedBgOnError (r: Reader<'a>) =

@@ -17,9 +17,9 @@
 
 namespace Website
 
-open IntelliFactory.WebSharper.Html.Server
-open IntelliFactory.WebSharper
-open IntelliFactory.WebSharper.Sitelets
+open WebSharper.Html.Server
+open WebSharper
+open WebSharper.Sitelets
 
 type Action =
     | Home
@@ -54,9 +54,6 @@ module Skin =
             }
 
 module Client =
-
-    open IntelliFactory.WebSharper.Html
-    open System
 
     [<Sealed>]
     type Control() =

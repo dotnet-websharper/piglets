@@ -15,11 +15,11 @@
 //
 // $end{copyright}
 
-namespace IntelliFactory.WebSharper.Piglets
+namespace WebSharper.Piglets
 
 open System
-open IntelliFactory.WebSharper
-open IntelliFactory.WebSharper.JavaScript
+open WebSharper
+open WebSharper.JavaScript
 
 module Id =
 

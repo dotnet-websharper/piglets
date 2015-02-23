@@ -15,9 +15,9 @@
 //
 // $end{copyright}
 
-module IntelliFactory.WebSharper.Piglets.Controls
+module WebSharper.Piglets.Controls
 
-open IntelliFactory.WebSharper.Html.Client
+open WebSharper.Html.Client
 
 
 /// A label for a given element.
