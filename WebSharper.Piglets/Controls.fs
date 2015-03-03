@@ -246,9 +246,10 @@ let ButtonValidate (submit: Submitter<'a>) =
 let Link (submit: Writer<unit>) =
     A [Attr.HRef "#"]
     |>! OnAfterRender (fun e ->
-        JQuery.JQuery.Of(e.Body).On("click", fun ev ->
+        JQuery.JQuery.Of(e.Body).On("click", fun el ev ->
             submit.Trigger(Success())
-            false))
+            ev.PreventDefault()
+        ).Ignore)
 
 [<JavaScript>]
 let Attr
