@@ -5,6 +5,8 @@
     <Name>WebSharper.Piglets.Test</Name>
     <OutputType>Library</OutputType>
     <OutputPath>../build/net45</OutputPath>
+    <WebSharperProject>Html</WebSharperProject>
+    <WebSharperHtmlDirectory>$(MSBuildThisFileDirectory)..\build\html</WebSharperHtmlDirectory>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile />

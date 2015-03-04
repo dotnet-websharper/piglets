@@ -27,13 +27,6 @@ type Action =
 module Skin =
     open System.Web
 
-    let TemplateLoadFrequency =
-        #if DEBUG
-        Content.Template.PerRequest
-        #else
-        Content.Template.Once
-        #endif
-
     type Page =
         {
             Title : string
@@ -41,8 +34,7 @@ module Skin =
         }
 
     let MainTemplate =
-        let path = HttpContext.Current.Server.MapPath("~/Main.html")
-        Content.Template<Page>(path, TemplateLoadFrequency)
+        Content.Template<Page>("~/Main.html")
             .With("title", fun x -> x.Title)
             .With("body", fun x -> x.Body)
 

@@ -19,7 +19,7 @@ let main =
             ])
 
 let test =
-    bt.WebSharper.Library("WebSharper.Piglets.Test")
+    bt.WebSharper.HtmlWebsite("WebSharper.Piglets.Test")
         .SourcesFromProject()
         .References(fun r ->
             [
@@ -27,20 +27,10 @@ let test =
                 r.Project(main)
             ])
 
-let web =
-    bt.WebSharper.HostWebsite("Web")
-        .References(fun r ->
-            [
-                r.NuGet("IntelliFactory.Reactive").Reference()
-                r.Project(main)
-                r.Project(test)
-            ])
-
 bt.Solution [
 
     main
     test
-    web
 
     bt.NuGet.CreatePackage()
         .Description("Provides a framework to build reactive interfaces in WebSharper,
