@@ -104,29 +104,35 @@ let CheckBox (stream: Stream<bool>) =
     i
 
 [<JavaScript>]
-let Radio (stream: Stream<'a>) (values: seq<'a * string>) =
+let Radio (stream: Stream<'a>) (values: seq<'a>) =
     let name = nextId()
     let values = List.ofSeq values
-    let elts = values |> List.map (fun (x, label) ->
-        let id = nextId()
-        let input =
-            Default.Input [Attr.Type "radio"; Attr.Name name; Attr.Id id]
+    let elts =
+        values
+        |> List.map (fun x ->
+            Default.Input [Attr.Type "radio"; Attr.Name name]
             |>! OnChange (fun div ->
                 if div.Body?``checked`` then
-                    stream.Trigger(Success x))
-        input, Span [
-            input
+                    stream.Trigger(Success x)))
+    let set = function
+        | Success v ->
+            (values, elts) ||> List.iter2 (fun x input ->
+                input.Body?``checked`` <- x = v)
+        | Failure _ -> ()
+    set stream.Latest
+    stream.Subscribe set |> ignore
+    Seq.ofList elts
+
+[<JavaScript>]
+let RadioLabelled (stream: Stream<'a>) (values: seq<'a * string>) =
+    (values, Radio stream (Seq.map fst values))
+    ||> Seq.map2 (fun (_, label) input ->
+        let id = nextId()
+        Span [
+            input -< [Attr.Id id]
             Label [Attr.For id; Text label]
         ])
-    Div (Seq.map snd elts)
-    |>! OnAfterRender (fun div ->
-        let set = function
-            | Success v ->
-                (values, elts) ||> List.iter2 (fun (x, _) (input, _) ->
-                    input.Body?``checked`` <- x = v)
-            | Failure _ -> ()
-        set stream.Latest
-        stream.Subscribe set |> ignore)
+    |> Div
 
 [<JavaScript>]
 let Select (stream: Stream<'a>) (values: seq<'a * string>) =

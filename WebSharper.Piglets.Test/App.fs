@@ -143,7 +143,7 @@ module View =
             Div [
                 Div [textInput firstName |> C.WithLabel "First name:"]
                 Div [textInput lastName |> C.WithLabel "Last name:"]
-                Div [C.Radio gender [Male, "Male"; Female, "Female"]]
+                C.RadioLabelled gender [Male, "Male"; Female, "Female"]
                 Div [C.IntInput age |> RedBgOnError (age.Through liveUser) |> C.WithLabel "Age:"]
                 Div [Label [Text "Contact:"]
                      Br []

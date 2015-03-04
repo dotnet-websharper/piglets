@@ -41,8 +41,11 @@ val IntInput : Stream<int> -> Element
 /// A Piglet checkbox.
 val CheckBox : Stream<bool> -> Element
 
-/// A Piglet radio button set.
-val Radio : Stream<'a> -> seq<'a * string> -> Element when 'a : equality
+/// A Piglet radio button set. Returns one <input> element for each given value.
+val Radio : Stream<'a> -> seq<'a> -> seq<Element> when 'a : equality
+
+/// A Piglet radio button set with labels for each item, wrapped in a div.
+val RadioLabelled : Stream<'a> -> seq<'a * string> -> Element when 'a : equality
 
 /// A Piglet combobox.
 val Select : Stream<'a> -> seq<'a * string> -> Element when 'a : equality
