@@ -30,7 +30,7 @@ let nextId =
 
 [<JavaScript>]
 let input ``type`` ofString toString (stream: Stream<'a>) =
-    let i = Default.Input [Attr.Type ``type``]
+    let i = Tags.Input [Type ``type``]
     match stream.Latest with
     | Failure _ -> ()
     | Success x -> i.Value <- toString x
@@ -50,12 +50,12 @@ let input ``type`` ofString toString (stream: Stream<'a>) =
 [<JavaScript>]
 let WithLabel label element =
     let id = nextId()
-    Span [Label [Attr.For id; Text label]; element -< [Attr.Id id]]
+    Span [Label [For id; Text label]; element -< [Id id]]
 
 [<JavaScript>]
 let WithLabelAfter label element =
     let id = nextId()
-    Span [element -< [Attr.Id id]; Label [Attr.For id; Text label]]
+    Span [element -< [Id id]; Label [For id; Text label]]
 
 [<JavaScript>]
 [<Inline>]
@@ -73,7 +73,7 @@ let IntInput (stream: Stream<int>) =
 
 [<JavaScript>]
 let TextArea (stream: Stream<string>) =
-    let i = Default.TextArea []
+    let i = Tags.TextArea []
     match stream.Latest with
     | Failure _ -> ()
     | Success x -> i.Value <- x
@@ -90,7 +90,7 @@ let TextArea (stream: Stream<string>) =
 [<JavaScript>]
 let CheckBox (stream: Stream<bool>) =
     let id = nextId()
-    let i = Default.Input [Attr.Type "checkbox"; Attr.Id id]
+    let i = Tags.Input [Type "checkbox"; Id id]
     match stream.Latest with
     | Failure _ -> ()
     | Success x -> i.Body?``checked`` <- x
@@ -110,7 +110,7 @@ let Radio (stream: Stream<'a>) (values: seq<'a>) =
     let elts =
         values
         |> List.map (fun x ->
-            Default.Input [Attr.Type "radio"; Attr.Name name]
+            Tags.Input [Type "radio"; Name name]
             |>! OnChange (fun div ->
                 if div.Body?``checked`` then
                     stream.Trigger(Success x)))
@@ -129,8 +129,8 @@ let RadioLabelled (stream: Stream<'a>) (values: seq<'a * string>) =
     ||> Seq.map2 (fun (_, label) input ->
         let id = nextId()
         Span [
-            input -< [Attr.Id id]
-            Label [Attr.For id; Text label]
+            input -< [Id id]
+            Label [For id; Text label]
         ])
     |> Div
 
@@ -140,7 +140,7 @@ let Select (stream: Stream<'a>) (values: seq<'a * string>) =
     let values = Array.ofSeq values
     let elts = values |> Array.map (fun (x, label) ->
         let id = nextId()
-        Default.Tags.Option [Attr.Value id] -< [Text label])
+        Tags.Option [Value id] -< [Text label])
     Select elts
     |>! OnChange (fun e ->
         if e.Body?selectedIndex >= 0 then
@@ -232,7 +232,7 @@ let EnableOnSuccess (reader: Reader<'a>) (element: Element) =
 
 [<JavaScript>]
 let Submit (submit: Writer<unit>) =
-    Default.Input [Attr.Type "submit"]
+    Tags.Input [Type "submit"]
     |>! OnClick (fun _ _ -> submit.Trigger(Success()))
 
 [<JavaScript>]
@@ -250,7 +250,7 @@ let ButtonValidate (submit: Submitter<'a>) =
 
 [<JavaScript>]
 let Link (submit: Writer<unit>) =
-    A [Attr.HRef "#"]
+    A [HRef "#"]
     |>! OnAfterRender (fun e ->
         JQuery.JQuery.Of(e.Body).On("click", fun el ev ->
             submit.Trigger(Success())
