@@ -146,7 +146,7 @@ let Select (stream: Stream<'a>) (values: seq<'a * string>) =
         if e.Body?selectedIndex >= 0 then
             stream.Trigger(Success (fst values.[e.Body?selectedIndex])))
     |>! OnAfterRender (fun div ->
-        stream.SubscribeImmediate (function
+        stream.Subscribe (function
             | Success v ->
                 match Array.tryFindIndex (fun (v', _) -> v = v') values with
                 | Some i -> elts.[i].SetAttribute("selected", "")

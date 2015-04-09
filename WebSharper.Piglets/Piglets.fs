@@ -98,7 +98,6 @@ type Reader<'a> [<JavaScript>] (id) =
 
     [<JavaScript>]
     member this.SubscribeImmediate f =
-        f this.Latest
         this.Subscribe f
 
     [<JavaScript>]
@@ -407,7 +406,7 @@ module Many =
             let add x =
                 let piglet = p x
                 streams.Add piglet.stream
-                piglet.stream.SubscribeImmediate (fun _ -> update()) |> ignore
+                piglet.stream.Subscribe (fun _ -> update()) |> ignore
                 let getThisIndex() =
                     streams |> Seq.findIndex (fun x -> x.Id = piglet.stream.Id)
                 let moveUp i =
@@ -489,7 +488,7 @@ module Choose =
 
         let subscriptions =
             ref [
-                chooser.stream.SubscribeImmediate (fun res ->
+                chooser.stream.Subscribe (fun res ->
                     res
                     |> Result.Map (fun i ->
                         i,
@@ -515,7 +514,7 @@ module Choose =
             let renders = Dictionary()
             let hasChild = ref false
             subscriptions :=
-                pStream.SubscribeImmediate (fun res ->
+                pStream.Subscribe (fun res ->
                     match res with
                     | Failure _ -> ()
                     | Success (i, p) ->
@@ -728,7 +727,7 @@ module Piglet =
     [<JavaScript>]
     let MapResultWithWriter f (p: Piglet<_, _>) =
         let stream = Stream(Failure [])
-        p.stream.SubscribeImmediate(f (stream :> Writer<_>)) |> ignore
+        p.stream.Subscribe(f (stream :> Writer<_>)) |> ignore
         {
             stream = stream
             view = p.view
