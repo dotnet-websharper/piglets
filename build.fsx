@@ -3,12 +3,9 @@
 open IntelliFactory.Build
 
 let bt =
-    BuildTool().PackageId("WebSharper.Piglets", "3.0")
-        .References(fun r ->
-            [
-                r.Assembly("System.Web")
-            ])
-    |> fun bt -> bt.WithFramework(bt.Framework.Net40)
+    BuildTool().PackageId("WebSharper.Piglets")
+        .VersionFrom("WebSharper")
+        .WithFramework(fun fw -> fw.Net40)
 
 let main =
     bt.WebSharper.Library("WebSharper.Piglets")
