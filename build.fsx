@@ -5,6 +5,7 @@ open IntelliFactory.Build
 let bt =
     BuildTool().PackageId("WebSharper.Piglets")
         .VersionFrom("WebSharper")
+        .WithFSharpVersion(FSharpVersion.FSharp30)
         .WithFramework(fun fw -> fw.Net40)
 
 let main =
@@ -12,7 +13,8 @@ let main =
         .SourcesFromProject()
         .References(fun r ->
             [
-                r.NuGet("IntelliFactory.Reactive").Reference()
+                r.NuGet("IntelliFactory.Reactive").ForceFoundVersion().Reference()
+                r.NuGet("WebSharper.Html").ForceFoundVersion().Reference()
             ])
 
 let test =
@@ -21,6 +23,7 @@ let test =
         .References(fun r ->
             [
                 r.NuGet("IntelliFactory.Reactive").Reference()
+                r.NuGet("WebSharper.Html").Reference()
                 r.Project(main)
             ])
 
