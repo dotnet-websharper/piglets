@@ -60,7 +60,7 @@ module Model =
 module ViewModel =
 
     open Model
-    module V = Piglet.Validation
+    module V = Validation
 
     [<JavaScript>]
     let Password() =

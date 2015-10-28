@@ -300,6 +300,44 @@ type Piglet<'a, 'v> =
     [<JavaScript>]
     member this.Stream = this.stream
 
+module Validation =
+
+    [<JavaScript>]
+    let Is' pred msg p =
+        let s' = Stream(p.stream.Latest, p.stream.Id)
+        p.stream.Subscribe(function
+            | Failure m -> s'.Trigger (Failure m)
+            | Success x when pred x -> s'.Trigger (Success x)
+            | _ -> s'.Trigger (Failure [msg]))
+        |> ignore
+        { p with
+            stream = s'
+        }
+
+    [<JavaScript>]
+    let Is pred msg p =
+        let s' = Stream(p.stream.Latest, p.stream.Id)
+        p.stream.Subscribe(function
+            | Failure m -> s'.Trigger (Failure m)
+            | Success x when pred x -> s'.Trigger (Success x)
+            | _ -> s'.Trigger (Failure [ErrorMessage(msg, s'.Id)]))
+        |> ignore
+        { p with
+            stream = s'
+        }
+
+    [<JavaScript>]
+    let NotEmpty x = x <> ""
+
+    [<JavaScript>]
+    let Match (re: string) = RegExp(re).Test : string -> bool
+
+    [<JavaScript>]
+    let IsNotEmpty msg p = Is NotEmpty msg p
+
+    [<JavaScript>]
+    let IsMatch re msg p = Is (Match re) msg p
+
 [<AutoOpen>]
 module Pervasives =
 
@@ -773,38 +811,6 @@ module Piglet =
             (Stream.Map
                 (function None -> none | Some s -> s)
                 (fun x -> if x = none then None else Some x))
-
-    module Validation =
-
-        [<JavaScript>]
-        let Is' pred msg p =
-            let s' = Stream(p.stream.Latest, p.stream.Id)
-            p.stream.Subscribe(function
-                | Failure m -> s'.Trigger (Failure m)
-                | Success x when pred x -> s'.Trigger (Success x)
-                | _ -> s'.Trigger (Failure [msg]))
-            |> ignore
-            { p with
-                stream = s'
-            }
-
-        [<JavaScript>]
-        let Is pred msg p =
-            let s' = Stream(p.stream.Latest, p.stream.Id)
-            p.stream.Subscribe(function
-                | Failure m -> s'.Trigger (Failure m)
-                | Success x when pred x -> s'.Trigger (Success x)
-                | _ -> s'.Trigger (Failure [ErrorMessage(msg, s'.Id)]))
-            |> ignore
-            { p with
-                stream = s'
-            }
-
-        [<JavaScript>]
-        let NotEmpty x = x <> ""
-
-        [<JavaScript>]
-        let Match (re: string) = RegExp(re).Test : string -> bool
 
     [<JavaScript>]
     let Confirm init validate nomatch =

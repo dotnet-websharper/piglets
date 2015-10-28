@@ -283,22 +283,30 @@ module Piglet =
 
         member Zero : unit -> Piglet<'a, 'b -> 'b>
 
-    module Validation =
+module Validation =
 
-        /// If the Piglet value passes the predicate, it is passed on;
-        /// else, `Failwith msg` is passed on.
-        val Is : pred: ('a -> bool) -> msg: string -> Piglet<'a, 'b> -> Piglet<'a, 'b>
+    /// If the Piglet value passes the predicate, it is passed on;
+    /// else, `Failwith msg` is passed on.
+    val Is : pred: ('a -> bool) -> msg: string -> Piglet<'a, 'b> -> Piglet<'a, 'b>
 
-        /// If the Piglet value passes the predicate, it is passed on;
-        /// else, `Failure [msg]` is passed on.
-        val Is' : pred: ('a -> bool) -> msg: ErrorMessage -> Piglet<'a, 'b> -> Piglet<'a, 'b>
+    /// If the Piglet value passes the predicate, it is passed on;
+    /// else, `Failure [msg]` is passed on.
+    val Is' : pred: ('a -> bool) -> msg: ErrorMessage -> Piglet<'a, 'b> -> Piglet<'a, 'b>
 
-        /// Checks that a string is not empty.
-        /// Can be used as predicate for Is and Is', eg:
-        /// Validation.Is Validation.NotEmpty "Field must not be empty."
-        val NotEmpty : value: string -> bool
+    /// Checks that the given string Piglet is not empty, otherwise
+    /// the given error message is passed on.
+    val IsNotEmpty : msg: string -> Piglet<string, 'b> -> Piglet<string, 'b>
 
-        /// Check that a string matches a regexp.
-        /// Can be used as predicate for Is and Is', eg:
-        /// Validation.Is (Validation.Match "^test.*") "Field must start with 'test'."
-        val Match : regexp: string -> (string -> bool)
+    /// Checks that the given string Piglet matches the given regex,
+    /// otherwise the given error message is passed on.
+    val IsMatch : regexp: string -> msg: string -> Piglet<string, 'b> -> Piglet<string, 'b>
+
+    /// Checks that a string is not empty.
+    /// Can be used as predicate for Is and Is', eg:
+    /// Validation.Is Validation.NotEmpty "Field must not be empty."
+    val NotEmpty : value: string -> bool
+
+    /// Check that a string matches a regexp.
+    /// Can be used as predicate for Is and Is', eg:
+    /// Validation.Is (Validation.Match "^test.*") "Field must start with 'test'."
+    val Match : regexp: string -> (string -> bool)
