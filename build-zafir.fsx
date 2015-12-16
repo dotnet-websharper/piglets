@@ -30,7 +30,7 @@ let test =
 bt.Solution [
 
     main
-    test
+//    test
 
     bt.NuGet.CreatePackage()
         .Description("Provides a framework to build reactive interfaces in Zafir,
