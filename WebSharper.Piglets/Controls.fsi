@@ -52,7 +52,7 @@ val Select : Stream<'a> -> seq<'a * string> -> Element when 'a : equality
 
 /// Render a multiple-valued stream.
 val RenderMany :
-    stream: Many.Stream<'a, 'v, Element, _, _> ->
+    stream: Many.Stream<'a, 'v, Element, 'y, 'z> ->
     renderOne: (Many.Operations -> 'v) ->
     container: Element ->
     Element

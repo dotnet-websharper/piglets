@@ -33,27 +33,23 @@ module Id =
 
 type ErrorSourceId = int
 
-[<Sealed>]
-type ErrorMessage [<JavaScript>] (message, source) =
-    [<JavaScript>]
+[<Sealed; JavaScript>]
+type ErrorMessage (message, source) =
     member this.Message : string = message
-    [<JavaScript>]
     member this.Source : ErrorSourceId = source
 
+[<JavaScript>]
 type Result<'a> =
     | Success of 'a
     | Failure of ErrorMessage list
 
-    [<JavaScript>]
     member this.isSuccess =
         match this with
         | Success _ -> true
         | Failure _ -> false
 
-    [<JavaScript>]
     static member Failwith msg : Result<'a> = Failure [ErrorMessage(msg, 0)]
 
-    [<JavaScript>]
     static member Ap(r1: Result<'a -> 'b>, r2: Result<'a>) =
         match r1, r2 with
         | Success f, Success x -> Success(f x)
@@ -61,49 +57,41 @@ type Result<'a> =
         | Success _, Failure m -> Failure m
         | Failure m1, Failure m2 -> Failure(m1 @ m2)
 
-    [<JavaScript>]
     static member Join (r: Result<Result<'a>>) =
         match r with
         | Failure m
         | Success (Failure m) -> Failure m
         | Success (Success x) -> Success x
 
-    [<JavaScript>]
     static member Map (f: 'a -> 'b) ra =
         match ra with
         | Success x -> Success (f x)
         | Failure m -> Failure m
 
-    [<JavaScript>]
     static member Map2 (f: 'a -> 'b -> 'c) ra rb =
         match ra, rb with
         | Success a, Success b -> Success (f a b)
         | Failure ma, Failure mb -> Failure (ma @ mb)
         | Failure m, _ | _, Failure m -> Failure m
 
-    [<JavaScript>]
     static member Iter (f: 'a -> unit) = function
         | Success x -> f x
         | Failure _ -> ()
 
-    [<JavaScript>]
     static member Bind (f: 'a -> Result<'b>) = function
         | Success x -> f x
         | Failure m -> Failure m
 
-[<AbstractClass>]
-type Reader<'a> [<JavaScript>] (id) =
+[<AbstractClass; JavaScript>]
+type Reader<'a> (id) =
     abstract member Latest : Result<'a>
     abstract member Subscribe : (Result<'a> -> unit) -> IDisposable
 
-    [<JavaScript>]
     member this.SubscribeImmediate f =
         this.Subscribe f
 
-    [<JavaScript>]
     member this.Id = id
 
-    [<JavaScript>]
     member this.Through (r: Reader<'b>) =
         let out = Stream(this.Latest)
         r.Subscribe(function
@@ -116,55 +104,46 @@ type Reader<'a> [<JavaScript>] (id) =
         |> ignore
         out :> Reader<'a>
 
-    [<JavaScript>]
     static member MapResult (f: Result<'b> -> Result<'a>) (r: Reader<'b>) : Reader<'a> =
         let out = Stream<'a>(f r.Latest)
         r.Subscribe(out.Trigger << f) |> ignore
         out :> Reader<'a>
 
-    [<JavaScript>]
     static member MapResult2 (f: Result<'b> -> Result<'c> -> Result<'a>) (rb: Reader<'b>) (rc: Reader<'c>) : Reader<'a> =
         let out = Stream<'a>(f rb.Latest rc.Latest)
         rb.Subscribe(fun b -> out.Trigger(f b rc.Latest)) |> ignore
         rc.Subscribe(fun c -> out.Trigger(f rb.Latest c)) |> ignore
         out :> Reader<'a>
 
-    [<JavaScript>]
     static member Map (f: 'b -> 'a) (r: Reader<'b>) : Reader<'a> =
         Reader.MapResult (Result.Map f) r
 
-    [<JavaScript>]
     static member Map2 (f: 'b -> 'c -> 'a) (rb: Reader<'b>) (rc: Reader<'c>) : Reader<'a> =
         Reader.MapResult2 (fun b c -> Result.Map2 f b c) rb rc
 
-    [<JavaScript>]
     static member MapToResult (f: 'b -> Result<'a>) (r: Reader<'b>) : Reader<'a> =
         Reader.MapResult (Result.Bind f) r
 
-and [<Interface>] Writer<'a> =
+and [<Interface; JavaScript>] Writer<'a> =
     abstract member Trigger : Result<'a> -> unit
 
-and [<Sealed>] Stream<'a> [<JavaScript>] (s: IntelliFactory.Reactive.HotStream<Result<'a>>, ?id) =
+and [<Sealed; JavaScript>] Stream<'a> (s: IntelliFactory.Reactive.HotStream<Result<'a>>, ?id) =
     inherit Reader<'a>(match id with Some id -> id | None -> Id.next())
 
-    [<JavaScript>]
     new(init, ?id) =
         Stream<_>(IntelliFactory.Reactive.HotStream.New init, ?id = id)
 
-    [<JavaScript>]
     override this.Latest =
         (!s.Latest).Value
 
-    [<JavaScript>]
     override this.Subscribe f =
         s.Subscribe f
 
-    [<JavaScript>]
     member this.Trigger x =
         s.Trigger x
 
     interface Writer<'a> with
-        [<JavaScript>] member this.Trigger x = this.Trigger x
+        member this.Trigger x = this.Trigger x
 
 [<JavaScript>]
 type Disposable(dispose) =
@@ -177,21 +156,19 @@ type ConstReader<'a>(x: Result<'a>) =
     override this.Latest = x
     override this.Subscribe f = new Disposable(ignore) :> IDisposable
 
+[<JavaScript>]
 type Reader<'a> with
-    [<JavaScript>]
     static member Const x = ConstReader(Result.Success x) :> Reader<'a>
-    [<JavaScript>]
     static member ConstResult x = ConstReader(x) :> Reader<'a>
 
+[<JavaScript>]
 type ErrorMessage with
-    [<JavaScript>]
     static member Create msg (reader: Reader<'a>) =
         new ErrorMessage(msg, reader.Id)
 
 /// I'd rather use an object expression,
 /// but they're forbidden inside [<JS>].
-[<Sealed>]
-[<JavaScript>]
+[<Sealed; JavaScript>]
 type ConcreteWriter<'a> (trigger: Result<'a> -> unit) =
 
     static member New (trigger: 'a -> unit) =
@@ -200,12 +177,10 @@ type ConcreteWriter<'a> (trigger: Result<'a> -> unit) =
             | Failure _ -> ())
 
     interface Writer<'a> with
-        [<JavaScript>]
         member this.Trigger x = trigger x
 
+[<JavaScript>]
 type Stream<'a> with
-
-    [<JavaScript>]
     member this.Write x =
         ConcreteWriter<unit>(function
             | Failure m -> this.Trigger (Failure m)
@@ -214,16 +189,14 @@ type Stream<'a> with
 
 /// I'd rather use an object expression,
 /// but they're forbidden inside [<JS>].
-[<Sealed>]
-type ConcreteReader<'a> [<JavaScript>] (latest, subscribe) =
+[<Sealed; JavaScript>]
+type ConcreteReader<'a> (latest, subscribe) =
     inherit Reader<'a>(Id.next())
-    [<JavaScript>]
     override this.Latest = latest()
-    [<JavaScript>]
     override this.Subscribe f = subscribe f
 
-[<Sealed>]
-type Submitter<'a> [<JavaScript>] (input: Reader<'a>, clearError: bool) =
+[<Sealed; JavaScript>]
+type Submitter<'a> (input: Reader<'a>, clearError: bool) =
     inherit Reader<'a>(Id.next())
 
     let output = Stream(Failure [])
@@ -245,38 +218,33 @@ type Submitter<'a> [<JavaScript>] (input: Reader<'a>, clearError: bool) =
                 | _ -> output.Trigger (Failure []))
             |> ignore
 
-    [<JavaScript>]
     member this.Input = input
 
-    [<JavaScript>]
     member this.Output = output
 
-    [<JavaScript>]
     member this.Trigger() = writer.Trigger(Success())
 
     interface Writer<unit> with
-        [<JavaScript>] member this.Trigger(x) = writer.Trigger(x)
+        member this.Trigger(x) = writer.Trigger(x)
 
-    [<JavaScript>] override this.Latest = output.Latest
-    [<JavaScript>] override this.Subscribe f = output.Subscribe f
+    override this.Latest = output.Latest
+    override this.Subscribe f = output.Subscribe f
 
+[<JavaScript>]
 module Stream =
 
-    [<JavaScript>]
     let Ap (sf: Stream<'a -> 'b>) (sx: Stream<'a>) : Stream<'b> =
         let out = Stream(Result.Ap(sf.Latest, sx.Latest))
         sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, sx.Latest))) |> ignore
         sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, x))) |> ignore
         out
 
-    [<JavaScript>]
     let ApJoin (sf: Stream<'a -> 'b>) (sx: Stream<Result<'a>>) : Stream<'b> =
         let out = Stream(Result.Ap(sf.Latest, Result.Join sx.Latest))
         sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, Result.Join sx.Latest))) |> ignore
         sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, Result.Join x))) |> ignore
         out
 
-    [<JavaScript>]
     let Map (a2b: 'a -> 'b) (b2a: 'b -> 'a) (s: Stream<'a>) : Stream<'b> =
         let s' = Stream<'b> (Result.Map a2b s.Latest, id = s.Id)
         let pa = ref s.Latest
@@ -291,18 +259,18 @@ module Stream =
                 s.Trigger !pa) |> ignore
         s'
 
+[<JavaScript>]
 type Piglet<'a, 'v> =
     {
         stream: Stream<'a>
         view: 'v
     }
 
-    [<JavaScript>]
     member this.Stream = this.stream
 
+[<JavaScript>]
 module Validation =
 
-    [<JavaScript>]
     let Is' pred msg p =
         let s' = Stream(p.stream.Latest, p.stream.Id)
         p.stream.Subscribe(function
@@ -314,7 +282,6 @@ module Validation =
             stream = s'
         }
 
-    [<JavaScript>]
     let Is pred msg p =
         let s' = Stream(p.stream.Latest, p.stream.Id)
         p.stream.Subscribe(function
@@ -326,35 +293,27 @@ module Validation =
             stream = s'
         }
 
-    [<JavaScript>]
     let NotEmpty x = x <> ""
 
-    [<JavaScript>]
     let Match (re: string) = RegExp(re).Test : string -> bool
 
-    [<JavaScript>]
     let IsNotEmpty msg p = Is NotEmpty msg p
 
-    [<JavaScript>]
     let IsMatch re msg p = Is (Match re) msg p
 
-[<AutoOpen>]
+[<AutoOpen; JavaScript>]
 module Pervasives =
 
     type Writer<'a> with
-        [<JavaScript>]
         static member Wrap (f: 'b -> 'a) (r: Writer<'a>) =
             new ConcreteWriter<'b>(fun a -> r.Trigger(Result.Map f a)) :> Writer<'b>
 
-        [<JavaScript>]
         static member WrapToResult (f: 'b -> Result<'a>) (r: Writer<'a>) =
             new ConcreteWriter<'b>(fun a -> r.Trigger(Result.Bind f a)) :> Writer<'b>
 
-        [<JavaScript>]
         static member WrapResult (f: Result<'b> -> Result<'a>) (r: Writer<'a>) =
             new ConcreteWriter<'b>(fun a -> r.Trigger(f a)) :> Writer<'b>
 
-        [<JavaScript>]
         static member WrapAsyncResult (f: Result<'b> -> Async<Result<'a>>) (r: Writer<'a>) =
             new ConcreteWriter<'b>(fun ra ->
                 async {
@@ -362,7 +321,6 @@ module Pervasives =
                     r.Trigger mapped
                 } |> Async.Start) :> Writer<'b>
 
-        [<JavaScript>]
         static member WrapToAsyncResult (f: 'b -> Async<Result<'a>>) (r: Writer<'a>) =
             r |> Writer.WrapAsyncResult (fun b ->
                 async {
@@ -371,7 +329,6 @@ module Pervasives =
                     | Failure f  -> return Failure f
                 })
 
-        [<JavaScript>]
         static member WrapAsync (f: 'b -> Async<'a>) (r: Writer<'a>) =
             r |> Writer.WrapToAsyncResult (fun b -> 
                 async {
@@ -380,29 +337,26 @@ module Pervasives =
                 })
 
     /// Push an argument to the view function.
-    [<JavaScript>]
     [<Inline>]
     let (<<^) v a = fun x -> v x a
 
     /// Map argument(s) to the view function.
-    [<JavaScript>]
     [<Inline>]
     let (>>^) v f = fun g -> g (v f)
 
-    [<JavaScript>]
     let (<*>) f x =
         {
             stream = Stream.Ap f.stream x.stream
             view = f.view >> x.view
         }
 
-    [<JavaScript>]
     let (<*?>) f x =
         {
             stream = Stream.ApJoin f.stream x.stream
             view = f.view >> x.view
         }
 
+[<JavaScript>]
 type Container<'t, 'u> =
     abstract member Add : 't -> unit
     abstract member Remove : int -> unit
@@ -575,17 +529,16 @@ module Choose =
                 choiceSubscriptions |> Seq.iter (fun (KeyValue (_, (_, s))) ->
                     s.Dispose())
 
-
+[<JavaScript>]
 module Piglet =
 
-    [<JavaScript; Inline>]
+    [<Inline>]
     let Create s v =
         {
             stream = s
             view = v
         }
 
-    [<JavaScript>]
     let Yield (x: 'a) =
         let s = Stream(Success x)
         {
@@ -593,7 +546,6 @@ module Piglet =
             view = fun f -> f s
         }
 
-    [<JavaScript>]
     let YieldFailure () =
         let s = Stream<'a>(Failure [])
         {
@@ -601,21 +553,18 @@ module Piglet =
             view = fun f -> f s
         }
 
-    [<JavaScript>]
     let Return (x: 'a) =
         {
             stream = Stream(Success x)
             view = id
         }
 
-    [<JavaScript>]
     let ReturnFailure () =
         {
             stream = Stream(Failure [])
             view = id
         }
 
-    [<JavaScript>]
     let WithSubmit pin =
         let submitter = Submitter(pin.stream, clearError = false)
         {
@@ -623,7 +572,6 @@ module Piglet =
             view = pin.view <<^ submitter
         }
 
-    [<JavaScript>]
     let WithSubmitClearError pin =
         let submitter = Submitter(pin.stream, clearError = true)
         {
@@ -631,7 +579,6 @@ module Piglet =
             view = pin.view <<^ submitter
         }
 
-    [<JavaScript>]
     let Choose (chooser: Piglet<'i, 'u -> 'v>) (choices: 'i -> Piglet<'o, 'w -> 'x>) =
         let s = Stream(Failure [])
         let c = new Choose.Stream<'o, 'i, 'u, 'v, 'w, 'x>(chooser, choices, s)
@@ -640,7 +587,6 @@ module Piglet =
             view = fun f -> f c
         }
 
-    [<JavaScript>]
     let ManyPiglet (inits : 'a[]) (create : Piglet<'a,'y->'z>) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.Stream<'a, 'v, 'w,'y,'z> -> 'x) -> 'x> =
         let s = Stream (Success inits)
         let m = Many.Stream<'a,'v,'w,'y,'z>(p, s, create)
@@ -649,7 +595,6 @@ module Piglet =
             view = fun f -> f m
         }
 
-    [<JavaScript>]
     let ManyInit (inits: 'a[]) (init: 'a) (p: 'a -> Piglet<'a, 'v -> 'w>) : Piglet<'a[], (Many.UnitStream<'a, 'v, 'w> -> 'x) -> 'x> =
         let s = Stream(Success inits)
         let _init = p init
@@ -660,53 +605,45 @@ module Piglet =
             view = fun f -> f m
         }
 
-    [<JavaScript>]
     let Many init p =
         ManyInit [|init|] init p
 
-    [<JavaScript>]
     let TransmitStream p =
         {
             stream = p.stream
             view = p.view <<^ p.stream
         }
 
-    [<JavaScript>]
     let TransmitReaderMapResult f p =
         {
             stream = p.stream
             view = p.view <<^ Reader.MapResult f p.stream
         }
 
-    [<JavaScript>]
     let TransmitReaderMapToResult f p =
         {
             stream = p.stream
             view = p.view <<^ Reader.MapToResult f p.stream
         }
 
-    [<JavaScript>]
     let TransmitReaderMap f p =
         {
             stream = p.stream
             view = p.view <<^ Reader.Map f p.stream
         }
 
-    [<JavaScript>]
     let TransmitReader p =
         {
             stream = p.stream
             view = p.view <<^ (p.stream :> Reader<_>)
         }
 
-    [<JavaScript>]
     let TransmitWriter p =
         {
             stream = p.stream
             view = p.view <<^ (p.stream :> Writer<_>)
         }
 
-    [<JavaScript>]
     let MapResult m p =
         let out = Stream(m p.stream.Latest : Result<_>)
         p.stream.Subscribe(out.Trigger << m) |> ignore
@@ -715,19 +652,16 @@ module Piglet =
             view = p.view
         }
 
-    [<JavaScript>]
     let MapToResult m p =
         p |> MapResult (function
             | Failure msg -> Failure msg
             | Success x -> m x)
 
-    [<JavaScript>]
     let Map m p =
         p |> MapResult (function
             | Failure msg -> Failure msg
             | Success x -> Success (m x))
 
-    [<JavaScript>]
     let MapAsyncResult m p =
         let out = Stream (Failure [])
         p.stream.Subscribe (fun v ->
@@ -746,13 +680,11 @@ module Piglet =
             view = p.view
         }
 
-    [<JavaScript>]
     let MapToAsyncResult m p =
         p |> MapAsyncResult (function
             | Failure msg -> async.Return (Failure msg)
             | Success x -> m x)
 
-    [<JavaScript>]
     let MapAsync m p =
         p |> MapAsyncResult (function
             | Failure msg -> async.Return (Failure msg)
@@ -762,7 +694,6 @@ module Piglet =
                     return Success res
                 })
 
-    [<JavaScript>]
     let MapResultWithWriter f (p: Piglet<_, _>) =
         let stream = Stream(Failure [])
         p.stream.Subscribe(f (stream :> Writer<_>)) |> ignore
@@ -771,7 +702,6 @@ module Piglet =
             view = p.view
         }
 
-    [<JavaScript>]
     let MapWithWriter f (p: Piglet<_, _>) =
         let f' (out: Writer<_>) r =
             match r with
@@ -779,32 +709,26 @@ module Piglet =
             | Success x -> f out x
         MapResultWithWriter f' p
 
-    [<JavaScript>]
     let FlushErrors p =
         MapResult (function Failure _ -> Failure [] | x -> x) p
 
-    [<JavaScript>]
     let RunResult action p =
         p.stream.Subscribe action
         |> ignore
         p
 
-    [<JavaScript>]
     let Run action p =
         RunResult (Result.Iter action) p
 
-    [<JavaScript>]
     let Render view p =
         p.view view
 
-    [<JavaScript>]
     let MapViewArgs view p =
         {
             stream = p.stream
             view = p.view >>^ view
         }
 
-    [<JavaScript>]
     let YieldOption (x: 'a option) (none: 'a) =
         Yield x
         |> MapViewArgs
@@ -812,7 +736,6 @@ module Piglet =
                 (function None -> none | Some s -> s)
                 (fun x -> if x = none then None else Some x))
 
-    [<JavaScript>]
     let Confirm init validate nomatch =
         let second = Yield init
         Return (fun a b -> a, b)
@@ -823,7 +746,6 @@ module Piglet =
         |> Map fst
         |> MapViewArgs (fun a b -> (a, b))
 
-    [<JavaScript>]
     type Builder =
         | Do
 
