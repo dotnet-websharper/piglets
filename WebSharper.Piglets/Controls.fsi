@@ -67,16 +67,18 @@ val RenderChoice :
 /// Display a reactive value.
 val ShowResult :
     reader: Reader<'a> ->
-    render: (Result<'a> -> #seq<#Pagelet>) ->
+    render: (Result<'a> -> 's) ->
     container: Element ->
     Element
+    when 's :> seq<'p> and 'p :> Pagelet
 
 /// Display a reactive value, or nothing if it is invalid.
 val Show :
     reader: Reader<'a> ->
-    render: ('a -> #seq<#Pagelet>) ->
+    render: ('a -> 's) ->
     container: Element ->
     Element
+    when 's :> seq<'p> and 'p :> Pagelet
 
 /// Display a reactive value, or nothing if it is invalid.
 val ShowString :
@@ -88,9 +90,10 @@ val ShowString :
 /// Display errors, if any.
 val ShowErrors :
     reader: Reader<'a> ->
-    render: (string list -> #seq<#Pagelet>) ->
+    render: (string list -> 's) ->
     container: Element ->
     Element
+    when 's :> seq<'p> and 'p :> Pagelet
 
 /// Add an attribute to an element that depends on a reader.
 val Attr :
