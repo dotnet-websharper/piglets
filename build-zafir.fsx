@@ -13,8 +13,8 @@ let main =
         .SourcesFromProject()
         .References(fun r ->
             [
-                r.NuGet("Zafir.Reactive").ForceFoundVersion().Reference()
-                r.NuGet("Zafir.Html").ForceFoundVersion().Reference()
+                r.NuGet("Zafir.Reactive").Latest(true).ForceFoundVersion().Reference()
+                r.NuGet("Zafir.Html").Latest(true).ForceFoundVersion().Reference()
             ])
 
 let test =
