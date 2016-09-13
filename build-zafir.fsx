@@ -11,6 +11,7 @@ let bt =
 let main =
     bt.Zafir.Library("WebSharper.Piglets")
         .SourcesFromProject()
+        .WithSourceMap()
         .References(fun r ->
             [
                 r.NuGet("Zafir.Reactive").Latest(true).ForceFoundVersion().Reference()
@@ -20,6 +21,7 @@ let main =
 let test =
     bt.Zafir.HtmlWebsite("WebSharper.Piglets.Test")
         .SourcesFromProject()
+        .WithSourceMap()
         .References(fun r ->
             [
                 r.NuGet("Zafir.Reactive").Latest(true).ForceFoundVersion().Reference()
