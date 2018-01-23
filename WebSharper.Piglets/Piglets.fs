@@ -116,13 +116,13 @@ type Reader<'a> (id) =
         out :> Reader<'a>
 
     static member Map (f: 'b -> 'a) (r: Reader<'b>) : Reader<'a> =
-        Reader.MapResult (Result.Map f) r
+        Reader.MapResult (Result<_>.Map f) r
 
     static member Map2 (f: 'b -> 'c -> 'a) (rb: Reader<'b>) (rc: Reader<'c>) : Reader<'a> =
-        Reader.MapResult2 (fun b c -> Result.Map2 f b c) rb rc
+        Reader.MapResult2 (fun b c -> Result<_>.Map2 f b c) rb rc
 
     static member MapToResult (f: 'b -> Result<'a>) (r: Reader<'b>) : Reader<'a> =
-        Reader.MapResult (Result.Bind f) r
+        Reader.MapResult (Result<_>.Bind f) r
 
 and [<Interface; JavaScript>] Writer<'a> =
     abstract member Trigger : Result<'a> -> unit
@@ -158,7 +158,7 @@ type ConstReader<'a>(x: Result<'a>) =
 
 [<JavaScript>]
 type Reader<'a> with
-    static member Const x = ConstReader(Result.Success x) :> Reader<'a>
+    static member Const x = ConstReader(Result<_>.Success x) :> Reader<'a>
     static member ConstResult x = ConstReader(x) :> Reader<'a>
 
 [<JavaScript>]
@@ -234,28 +234,28 @@ type Submitter<'a> (input: Reader<'a>, clearError: bool) =
 module Stream =
 
     let Ap (sf: Stream<'a -> 'b>) (sx: Stream<'a>) : Stream<'b> =
-        let out = Stream(Result.Ap(sf.Latest, sx.Latest))
-        sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, sx.Latest))) |> ignore
-        sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, x))) |> ignore
+        let out = Stream(Result<_>.Ap(sf.Latest, sx.Latest))
+        sf.Subscribe(fun f -> out.Trigger(Result<_>.Ap(f, sx.Latest))) |> ignore
+        sx.Subscribe(fun x -> out.Trigger(Result<_>.Ap(sf.Latest, x))) |> ignore
         out
 
     let ApJoin (sf: Stream<'a -> 'b>) (sx: Stream<Result<'a>>) : Stream<'b> =
-        let out = Stream(Result.Ap(sf.Latest, Result.Join sx.Latest))
-        sf.Subscribe(fun f -> out.Trigger(Result.Ap(f, Result.Join sx.Latest))) |> ignore
-        sx.Subscribe(fun x -> out.Trigger(Result.Ap(sf.Latest, Result.Join x))) |> ignore
+        let out = Stream(Result<_>.Ap(sf.Latest, Result<_>.Join sx.Latest))
+        sf.Subscribe(fun f -> out.Trigger(Result<_>.Ap(f, Result<_>.Join sx.Latest))) |> ignore
+        sx.Subscribe(fun x -> out.Trigger(Result<_>.Ap(sf.Latest, Result<_>.Join x))) |> ignore
         out
 
     let Map (a2b: 'a -> 'b) (b2a: 'b -> 'a) (s: Stream<'a>) : Stream<'b> =
-        let s' = Stream<'b> (Result.Map a2b s.Latest, id = s.Id)
+        let s' = Stream<'b> (Result<_>.Map a2b s.Latest, id = s.Id)
         let pa = ref s.Latest
         let pb = ref s'.Latest
         s.Subscribe (fun a ->
             if !pa !==. a then
-                pb := Result.Map a2b a
+                pb := Result<_>.Map a2b a
                 s'.Trigger !pb) |> ignore
         s'.Subscribe (fun b ->
             if !pb !==. b then
-                pa := Result.Map b2a b
+                pa := Result<_>.Map b2a b
                 s.Trigger !pa) |> ignore
         s'
 
@@ -306,10 +306,10 @@ module Pervasives =
 
     type Writer<'a> with
         static member Wrap (f: 'b -> 'a) (r: Writer<'a>) =
-            new ConcreteWriter<'b>(fun a -> r.Trigger(Result.Map f a)) :> Writer<'b>
+            new ConcreteWriter<'b>(fun a -> r.Trigger(Result<_>.Map f a)) :> Writer<'b>
 
         static member WrapToResult (f: 'b -> Result<'a>) (r: Writer<'a>) =
-            new ConcreteWriter<'b>(fun a -> r.Trigger(Result.Bind f a)) :> Writer<'b>
+            new ConcreteWriter<'b>(fun a -> r.Trigger(Result<_>.Bind f a)) :> Writer<'b>
 
         static member WrapResult (f: Result<'b> -> Result<'a>) (r: Writer<'a>) =
             new ConcreteWriter<'b>(fun a -> r.Trigger(f a)) :> Writer<'b>
@@ -386,7 +386,7 @@ module Many =
                 | Failure m1, Failure m2 -> Failure (m2 @ m1))
                 (Success [])
                 streams
-            |> Result.Map (List.rev >> Array.ofList)
+            |> Result<_>.Map (List.rev >> Array.ofList)
             |> out.Trigger
 
 
@@ -424,9 +424,9 @@ module Many =
                 let subMoveUp = Submitter(inMoveUp, clearError = false)
                 let subMoveDown = Submitter(inMoveDown, clearError = false)
                 let subUpSubscription =
-                    subMoveUp.Subscribe(Result.Iter moveUp)
+                    subMoveUp.Subscribe(Result<_>.Iter moveUp)
                 let subDownSubscription =
-                    subMoveDown.Subscribe(Result.Iter moveDown)
+                    subMoveDown.Subscribe(Result<_>.Iter moveDown)
                 let delete () =
                     let i = getThisIndex()
                     streams.RemoveAt i
@@ -482,7 +482,7 @@ module Choose =
             ref [
                 chooser.stream.Subscribe (fun res ->
                     res
-                    |> Result.Map (fun i ->
+                    |> Result<_>.Map (fun i ->
                         i,
                         if choiceSubscriptions.ContainsKey i then
                             fst choiceSubscriptions.[i]
@@ -718,7 +718,7 @@ module Piglet =
         p
 
     let Run action p =
-        RunResult (Result.Iter action) p
+        RunResult (Result<_>.Iter action) p
 
     let Render view p =
         p.view view

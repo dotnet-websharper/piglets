@@ -2,11 +2,10 @@
 *.user
 build/
 packages/
-tools/packages/
 build/
-Web/Content/
-Web/Scripts/
-Web/bin/
-Web/obj/
-**/bin/
-**/obj/
+bin/
+obj/
+/.fake/
+/paket-files/
+/.vscode/
+nuget/*.paket.template
