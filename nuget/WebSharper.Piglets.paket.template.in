@@ -12,8 +12,8 @@ description
 tags
     Web JavaScript F# C#
 files
-    ../WebSharper.Piglets/bin/Release/netstandard2.0/WebSharper.Piglets.dll ==> lib/net461
-    ../WebSharper.Piglets/bin/Release/netstandard2.0/WebSharper.Piglets.xml ==> lib/net461
+    ../WebSharper.Piglets/bin/Release/net461/WebSharper.Piglets.dll ==> lib/net461
+    ../WebSharper.Piglets/bin/Release/net461/WebSharper.Piglets.xml ==> lib/net461
     ../WebSharper.Piglets/bin/Release/netstandard2.0/WebSharper.Piglets.dll ==> lib/netstandard2.0
     ../WebSharper.Piglets/bin/Release/netstandard2.0/WebSharper.Piglets.xml ==> lib/netstandard2.0
 dependencies
