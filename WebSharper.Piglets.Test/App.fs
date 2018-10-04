@@ -2,16 +2,19 @@
 //
 // This file is part of WebSharper
 //
-// Copyright (c) 2008-2013 IntelliFactory
+// Copyright (c) 2008-2018 IntelliFactory
 //
-// For open source use, WebSharper is licensed under GNU Affero General Public
-// License v3.0 (AGPLv3) with open-source exceptions for most OSS license types
-// (see http://websharper.com/licensing). This enables you to develop open
-// source WebSharper applications royalty-free, without requiring a license.
-// However, for closed source use, you must acquire a developer license.
+// Licensed under the Apache License, Version 2.0 (the "License"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at
 //
-// Please contact IntelliFactory for licensing and support options at
-// {licensing|sales @ intellifactory.com}.
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied.  See the License for the specific language governing
+// permissions and limitations under the License.
 //
 // $end{copyright}
 
