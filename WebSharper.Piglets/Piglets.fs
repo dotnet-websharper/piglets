@@ -159,12 +159,10 @@ type ConstReader<'a>(x: Result<'a>) =
     override this.Latest = x
     override this.Subscribe f = new Disposable(ignore) :> IDisposable
 
-[<JavaScript>]
 type Reader<'a> with
     static member Const x = ConstReader(Result<_>.Success x) :> Reader<'a>
     static member ConstResult x = ConstReader(x) :> Reader<'a>
 
-[<JavaScript>]
 type ErrorMessage with
     static member Create msg (reader: Reader<'a>) =
         new ErrorMessage(msg, reader.Id)
@@ -182,7 +180,6 @@ type ConcreteWriter<'a> (trigger: Result<'a> -> unit) =
     interface Writer<'a> with
         member this.Trigger x = trigger x
 
-[<JavaScript>]
 type Stream<'a> with
     member this.Write x =
         ConcreteWriter<unit>(function
