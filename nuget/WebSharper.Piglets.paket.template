@@ -17,6 +17,6 @@ files
     ../WebSharper.Piglets/bin/Release/netstandard2.0/WebSharper.Piglets.dll ==> lib/netstandard2.0
     ../WebSharper.Piglets/bin/Release/netstandard2.0/WebSharper.Piglets.xml ==> lib/netstandard2.0
 dependencies
-        WebSharper ~> LOCKEDVERSION/3
-        WebSharper.Reactive ~> LOCKEDVERSION/3
-        WebSharper.Html ~> LOCKEDVERSION/3
+        WebSharper ~> LOCKEDVERSION:[3]
+        WebSharper.Reactive ~> LOCKEDVERSION:[3]
+        WebSharper.Html ~> LOCKEDVERSION:[3]
