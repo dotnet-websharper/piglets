@@ -31,6 +31,4 @@ let targets =
     WSTargets.Default (fun () -> GetSemVerOf "WebSharper" |> ComputeVersion)
     |> MakeTargets
 
-targets.Publish ==> "CI-Release"
-
 Target.runOrDefault "Build"
