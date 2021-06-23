@@ -400,15 +400,15 @@ NUGET
       Microsoft.NETCore.Targets (>= 1.0.1) - restriction: || (&& (== net461) (< net451)) (== netstandard2.0)
       System.Runtime (>= 4.1) - restriction: || (&& (== net461) (< net451)) (== netstandard2.0)
   remote: https://daily.websharper.com/nuget
-    WebSharper (4.7.1.426)
+    WebSharper (4.7.2.445)
       FSharp.Core (>= 4.2.3)
       System.Reflection.Emit.Lightweight (>= 4.3)
-    WebSharper.FSharp (4.7.1.426)
-      WebSharper (4.7.1.426)
-    WebSharper.Html (4.7.1.194)
-      WebSharper (>= 4.7.1 < 4.8)
-    WebSharper.Reactive (4.7.1.173)
-      WebSharper (>= 4.7.1 < 4.8)
+    WebSharper.FSharp (4.7.2.445)
+      WebSharper (4.7.2.445)
+    WebSharper.Html (4.7.1.201)
+      WebSharper (>= 4.7.2 < 4.8)
+    WebSharper.Reactive (4.7.2.180)
+      WebSharper (>= 4.7.2 < 4.8)
 
 GROUP wsbuild
 
